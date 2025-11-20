@@ -83,7 +83,7 @@ async function createFund(title, metadataURI) {
       const fundId = parsed.args.fundId.toString();
       
       // Gửi thông tin lên backend để lưu vào DB (optional)
-      await fetch('http://localhost:3000/api/funds/sync', {
+      await fetch('http://localhost:3001/api/funds/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,7 +128,7 @@ async function donate(fundId, amountInEth) {
     console.log('Donation confirmed:', receipt.hash);
     
     // Thông báo cho backend (optional)
-    await fetch('http://localhost:3000/api/funds/sync-donation', {
+    await fetch('http://localhost:3001/api/funds/sync-donation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

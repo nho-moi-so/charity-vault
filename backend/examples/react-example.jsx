@@ -86,7 +86,7 @@ function CharityApp() {
   // Load danh sách quỹ từ backend
   const loadFunds = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/funds');
+      const response = await fetch('http://localhost:3001/api/funds');
       const data = await response.json();
       setFunds(data.funds || []);
     } catch (error) {

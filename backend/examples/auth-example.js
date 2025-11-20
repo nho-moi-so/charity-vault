@@ -29,7 +29,7 @@ async function connectWalletAndAuth() {
     const signature = await signer.signMessage(message);
 
     // Bước 4: Gửi lên backend để verify và lưu user
-    const response = await fetch('http://localhost:3000/api/auth/connect', {
+    const response = await fetch('http://localhost:3001/api/auth/connect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -68,7 +68,7 @@ async function updateProfile(username, email, avatar, bio) {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/auth/profile', {
+    const response = await fetch('http://localhost:3001/api/auth/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -101,7 +101,7 @@ async function updateProfile(username, email, avatar, bio) {
 
 async function getUser(address) {
   try {
-    const response = await fetch(`http://localhost:3000/api/auth/${address}`);
+    const response = await fetch(`http://localhost:3001/api/auth/${address}`);
     const data = await response.json();
     
     if (data.success) {
