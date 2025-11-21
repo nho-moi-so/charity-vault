@@ -202,11 +202,36 @@ class FundController {
       // Lấy dữ liệu từ blockchain
       const fundData = await blockchainService.getFundFromBlockchain(fundId);
 
+      // Parse metadata nếu có
+      let additionalData = {};
+      try {
+        if (fundData.metadataURI) {
+          const metadata = JSON.parse(fundData.metadataURI);
+          additionalData = {
+            description: metadata.description || '',
+            fullDescription: metadata.fullDescription || '',
+            category: metadata.category || [],
+            goal: Number(metadata.goal) || 0,
+            startDate: metadata.startDate ? new Date(metadata.startDate) : null,
+            endDate: metadata.endDate ? new Date(metadata.endDate) : null,
+            images: {
+              main: metadata.anhChinh?.[0]?.response?.url || metadata.anhChinh?.[0]?.url || '',
+              thumbnails: metadata.anhThumbnail?.map(f => f.response?.url || f.url) || []
+            },
+            bankAccount: metadata.bankAccount || {},
+            creatorInfo: metadata.creator || {}
+          };
+        }
+      } catch (e) {
+        console.warn('Failed to parse metadataURI in syncFund:', e.message);
+      }
+
       // Lưu vào DB
       const fund = await Fund.findOneAndUpdate(
         { fundId: fundId.toString() },
         {
           ...fundData,
+          ...additionalData,
           fundId: fundId.toString(),
           updatedAt: new Date()
         },

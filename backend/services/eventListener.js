@@ -26,6 +26,30 @@ class EventListener {
         // Lấy thông tin đầy đủ từ blockchain
         const balance = await contractReadOnly.fundBalance(fundId);
         
+        // Helper parse metadata
+        let additionalData = {};
+        try {
+          if (metadataURI) {
+            const metadata = JSON.parse(metadataURI);
+            additionalData = {
+              description: metadata.description || '',
+              fullDescription: metadata.fullDescription || '',
+              category: metadata.category || [],
+              goal: Number(metadata.goal) || 0,
+              startDate: metadata.startDate ? new Date(metadata.startDate) : null,
+              endDate: metadata.endDate ? new Date(metadata.endDate) : null,
+              images: {
+                main: metadata.anhChinh?.[0]?.response?.url || metadata.anhChinh?.[0]?.url || '',
+                thumbnails: metadata.anhThumbnail?.map(f => f.response?.url || f.url) || []
+              },
+              bankAccount: metadata.bankAccount || {},
+              creatorInfo: metadata.creator || {}
+            };
+          }
+        } catch (e) {
+          console.warn('Failed to parse metadataURI:', e.message);
+        }
+
         await Fund.findOneAndUpdate(
           { fundId: fundIdNum },
           {
@@ -33,6 +57,7 @@ class EventListener {
             owner: owner.toLowerCase(),
             title,
             metadataURI,
+            ...additionalData,
             totalReceived: '0',
             totalWithdrawn: '0',
             balance: balance.toString(),
@@ -131,6 +156,30 @@ class EventListener {
           const fundData = await contractReadOnly.getFund(i);
           const balance = await contractReadOnly.fundBalance(i);
 
+          // Helper parse metadata
+          let additionalData = {};
+          try {
+            if (fundData.metadataURI) {
+              const metadata = JSON.parse(fundData.metadataURI);
+              additionalData = {
+                description: metadata.description || '',
+                fullDescription: metadata.fullDescription || '',
+                category: metadata.category || [],
+                goal: Number(metadata.goal) || 0,
+                startDate: metadata.startDate ? new Date(metadata.startDate) : null,
+                endDate: metadata.endDate ? new Date(metadata.endDate) : null,
+                images: {
+                  main: metadata.anhChinh?.[0]?.response?.url || metadata.anhChinh?.[0]?.url || '',
+                  thumbnails: metadata.anhThumbnail?.map(f => f.response?.url || f.url) || []
+                },
+                bankAccount: metadata.bankAccount || {},
+                creatorInfo: metadata.creator || {}
+              };
+            }
+          } catch (e) {
+            // Ignore parse error for old data
+          }
+
           await Fund.findOneAndUpdate(
             { fundId: i.toString() },
             {
@@ -138,6 +187,7 @@ class EventListener {
               owner: fundData.owner.toLowerCase(),
               title: fundData.title,
               metadataURI: fundData.metadataURI,
+              ...additionalData,
               totalReceived: fundData.totalReceived.toString(),
               totalWithdrawn: fundData.totalWithdrawn.toString(),
               balance: balance.toString(),

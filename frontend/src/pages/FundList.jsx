@@ -67,20 +67,28 @@ const FundList = () => {
 
       if (response.data.success) {
         // Map data từ backend format sang frontend format
-        const mappedFunds = response.data.funds.map((fund) => ({
-          id: fund.fundId,
-          title: fund.title,
-          status: "ongoing", // Backend chưa có status, có thể tính từ dates
-          category: "Khác", // Backend chưa có category
-          image:
-            "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg", // Default image
-          raised: parseFloat(fund.totalReceived || 0),
-          goal: 100000000, // Default goal, backend chưa có
-          donors: 0, // Backend chưa có donors count
-          daysLeft: 30, // Default, backend chưa có
-          owner: fund.owner,
-          balance: fund.balance,
-        }));
+        // Map data từ backend format sang frontend format
+        const mappedFunds = response.data.funds.map((fund) => {
+          // Tính số ngày còn lại
+          const endDate = fund.endDate ? new Date(fund.endDate) : new Date();
+          const today = new Date();
+          const timeDiff = endDate.getTime() - today.getTime();
+          const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          return {
+            id: fund.fundId,
+            title: fund.title,
+            status: daysLeft > 0 ? "ongoing" : "finished",
+            category: fund.category && fund.category.length > 0 ? fund.category[0] : "Khác",
+            image: fund.images?.main || "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
+            raised: parseFloat(fund.totalReceived || 0),
+            goal: fund.goal || 100000000, // Fallback nếu không có goal
+            donors: 0, // Tạm thời chưa có số lượng donors trong API list
+            daysLeft: daysLeft > 0 ? daysLeft : 0,
+            owner: fund.owner,
+            balance: fund.balance,
+          };
+        });
 
         setFunds(mappedFunds);
         setTotalFunds(response.data.pagination?.total || mappedFunds.length);

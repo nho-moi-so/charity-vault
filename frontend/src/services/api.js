@@ -94,5 +94,27 @@ export const donationAPI = {
   getFundHistory: (fundId, params = {}) => api.get(`/donations/fund/${fundId}`, { params }),
 };
 
-export default api;
+export const uploadAPI = {
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return api.post("/upload/single", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+  uploadMultiple: (files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append("images", file);
+    });
+    return api.post("/upload/multiple", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  }
+};
 
+export default api;

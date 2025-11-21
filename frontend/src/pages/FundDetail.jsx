@@ -7,7 +7,7 @@ import FooterSection from "../components/FooterSection";
 import FundGallery from "../Details/FundGallery";
 import FundInfoBox from "../Details/FundInfoBox";
 import FundDescription from "../Details/FundDescription";
-import FundCreatorInfo from "../Details/FundCreatorInfo"; 
+import FundCreatorInfo from "../Details/FundCreatorInfo";
 import FundOtherCampaigns from "../Details/FundOtherCampaigns";
 import { fundAPI } from "../services/api";
 import { getFundInfo } from "../services/Web3Service";
@@ -30,16 +30,17 @@ const FundDetail = () => {
   const fetchFundDetail = async () => {
     try {
       setLoading(true);
-      
+
       // Lấy từ backend API
       const response = await fundAPI.getById(id);
-      
+
       if (response.data.success) {
         setFund(response.data.fund);
-        
+
         // Lấy thêm data từ blockchain để có thông tin mới nhất
         try {
-          const blockchainInfo = await getFundInfo(id);
+          // Sử dụng fundId từ database để query blockchain, không dùng id từ params (là _id của MongoDB)
+          const blockchainInfo = await getFundInfo(response.data.fund.fundId);
           setBlockchainData(blockchainInfo);
         } catch (error) {
           console.error("Error fetching blockchain data:", error);
@@ -130,7 +131,7 @@ const FundDetail = () => {
 
             <Col xs={24} md={8}>
               <FundInfoBox fund={fund} blockchainData={blockchainData} />
-              <FundCreatorInfo fund={fund} /> 
+              <FundCreatorInfo fund={fund} />
             </Col>
           </Row>
           <FundOtherCampaigns currentFundId={id} />

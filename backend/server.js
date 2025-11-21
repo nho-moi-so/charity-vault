@@ -5,9 +5,15 @@ import connectDB from './config/database.js';
 import fundRoutes from './routes/funds.js';
 import authRoutes from './routes/auth.js';
 import donationRoutes from './routes/donations.js';
+import uploadRoutes from './routes/upload.js';
 import eventListener from './services/eventListener.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,10 +22,14 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/funds', fundRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/donations', donationRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -33,7 +33,7 @@ import {
   loginWithWallet,
   getStoredUser,
 } from "../services/authService";
-import { fundAPI } from "../services/api";
+import { fundAPI, uploadAPI } from "../services/api";
 
 const { Title, Paragraph } = Typography;
 const { Step } = Steps;
@@ -69,101 +69,167 @@ const TaoQuyMoi = () => {
       message.success("Đã kết nối ví thành công!");
     } catch (error) {
       console.error("Connect wallet error:", error);
-      message.error(error?.message || "Không thể kết nối ví. Vui lòng thử lại.");
+      message.error(
+        error?.message || "Không thể kết nối ví. Vui lòng thử lại."
+      );
     }
   };
 
+  // Define fields for each step to handle validation
+  const stepFields = [
+    // Step 1 Fields
+    [
+      "hoTen",
+      "ngaySinh",
+      "dienThoai",
+      "email",
+      "social",
+      "diaChi",
+      "tenNhom",
+      "vaiTro",
+      "logo",
+      "linkGioiThieu",
+      "thanhTich",
+    ],
+    // Step 2 Fields
+    [
+      "mucDich",
+      "camKetCongKhai",
+      "tenQuy",
+      "moTaNgan",
+      "gioiThieu",
+      "anhChinh",
+      "anhThumbnail",
+      "danhMuc",
+      "soTienMucTieu",
+      "ngayBatDau",
+      "ngayKetThuc",
+    ],
+    // Step 3 Fields
+    ["chuTaiKhoan", "soTaiKhoan", "nganHang", "chiNhanh", "qrCode"],
+  ];
+
   const next = () => {
+    // Validate only fields in the current step
     form
-      .validateFields()
+      .validateFields(stepFields[currentStep])
       .then(() => setCurrentStep(currentStep + 1))
-      .catch(() => {
+      .catch((error) => {
+        console.error("Validation failed:", error);
         message.error("Vui lòng nhập đầy đủ thông tin trước khi tiếp tục.");
       });
   };
 
   const prev = () => setCurrentStep(currentStep - 1);
 
-  const handleFinish = async (values) => {
-    if (!walletAddress) {
-      message.error("Vui lòng kết nối ví MetaMask trước khi tạo quỹ!");
-      return;
-    }
-
+  const handleFinish = async () => {
+    // Validate all fields before submitting
     try {
-      setLoading(true);
-      
-      // Tạo metadata URI (có thể lưu lên IPFS hoặc backend)
-      const metadata = {
-        title: values.tenQuy,
-        description: values.moTaNgan,
-        fullDescription: values.gioiThieu,
-        category: values.danhMuc || [],
-        goal: values.soTienMucTieu,
-        startDate: values.ngayBatDau,
-        endDate: values.ngayKetThuc,
-        bankAccount: {
-          accountName: values.chuTaiKhoan,
-          accountNumber: values.soTaiKhoan,
-          bank: values.nganHang,
-          branch: values.chiNhanh,
-        },
-        creator: {
-          name: values.hoTen,
-          email: values.email,
-          phone: values.dienThoai,
-          address: values.diaChi,
-          organization: values.tenNhom,
-          role: values.vaiTro,
-        },
-      };
+      const values = await form.validateFields();
 
-      // Tạm thời dùng JSON string làm metadataURI
-      // Trong production nên upload lên IPFS
-      const metadataURI = JSON.stringify(metadata);
-
-      // Tạo quỹ trên blockchain
-      message.loading({ content: "Đang tạo quỹ trên blockchain...", key: "creating" });
-      
-      const receipt = await createFund(values.tenQuy, metadataURI);
-      
-      // Lấy fundId từ event hoặc từ blockchain
-      // Event FundCreated sẽ có fundId
-      let fundId = null;
-      if (receipt.logs && receipt.logs.length > 0) {
-        // Parse event để lấy fundId
-        // Tạm thời dùng totalFunds - 1
-        const { getTotalFunds } = await import("../services/Web3Service");
-        const total = await getTotalFunds();
-        fundId = total - 1;
+      if (!walletAddress) {
+        message.error("Vui lòng kết nối ví MetaMask trước khi tạo quỹ!");
+        return;
       }
 
-      // Sync với backend
-      if (fundId !== null) {
-        try {
-          await fundAPI.create({
-            fundId,
-            title: values.tenQuy,
-            metadataURI,
-            owner: walletAddress,
-            txHash: receipt.hash,
-          });
-        } catch (error) {
-          console.error("Error syncing with backend:", error);
-          // Không block nếu backend sync fail
+      try {
+        setLoading(true);
+
+        // Helper function để lấy URL từ file list
+        const getFileUrl = (fileList) => {
+          if (fileList && fileList.length > 0 && fileList[0].url) {
+            return fileList[0].url;
+          }
+          return "";
+        };
+
+        const getFileUrls = (fileList) => {
+          if (fileList && fileList.length > 0) {
+            return fileList.map((f) => f.url).filter((url) => url);
+          }
+          return [];
+        };
+
+        // Tạo metadata URI (có thể lưu lên IPFS hoặc backend)
+        const metadata = {
+          title: values.tenQuy,
+          description: values.moTaNgan,
+          fullDescription: values.gioiThieu,
+          category: values.danhMuc || [],
+          goal: values.soTienMucTieu,
+          startDate: values.ngayBatDau,
+          endDate: values.ngayKetThuc,
+          images: {
+            main: getFileUrl(values.anhChinh),
+            thumbnails: getFileUrls(values.anhThumbnail),
+            logo: getFileUrl(values.logo),
+          },
+          bankAccount: {
+            accountName: values.chuTaiKhoan,
+            accountNumber: values.soTaiKhoan,
+            bank: values.nganHang,
+            branch: values.chiNhanh,
+            qrCode: getFileUrl(values.qrCode),
+          },
+          creator: {
+            name: values.hoTen,
+            email: values.email,
+            phone: values.dienThoai,
+            address: values.diaChi,
+            organization: values.tenNhom,
+            role: values.vaiTro,
+          },
+        };
+
+        // Tạm thời dùng JSON string làm metadataURI
+        // Trong production nên upload lên IPFS
+        const metadataURI = JSON.stringify(metadata);
+
+        // Tạo quỹ trên blockchain
+        message.loading({
+          content: "Đang tạo quỹ trên blockchain...",
+          key: "creating",
+        });
+
+        const receipt = await createFund(values.tenQuy, metadataURI);
+
+        // Lấy fundId từ event
+        const { getFundIdFromReceipt } = await import(
+          "../services/Web3Service"
+        );
+        const fundId = await getFundIdFromReceipt(receipt);
+        console.log("Fund Created with ID:", fundId);
+
+        // Sync với backend
+        if (fundId !== null) {
+          try {
+            await fundAPI.create({
+              fundId,
+              title: values.tenQuy,
+              metadataURI,
+              owner: walletAddress,
+              txHash: receipt.hash,
+            });
+          } catch (error) {
+            console.error("Error syncing with backend:", error);
+            // Không block nếu backend sync fail
+          }
         }
-      }
 
-      message.success({ content: "Tạo quỹ thành công!", key: "creating" });
-      navigate("/funds");
+        message.success({ content: "Tạo quỹ thành công!", key: "creating" });
+        navigate("/funds");
+      } catch (error) {
+        console.error("Error creating fund:", error);
+        message.error({
+          content: error.message || "Không thể tạo quỹ. Vui lòng thử lại.",
+          key: "creating",
+        });
+      } finally {
+        setLoading(false);
+      }
     } catch (error) {
-      console.error("Error creating fund:", error);
-      message.error({ 
-        content: error.message || "Không thể tạo quỹ. Vui lòng thử lại.", 
-        key: "creating" 
-      });
-    } finally {
-      setLoading(false);
+      console.error("Validation failed:", error);
+      message.error("Vui lòng kiểm tra lại thông tin.");
     }
   };
 
@@ -176,123 +242,140 @@ const TaoQuyMoi = () => {
         <>
           <Title level={4}>Phần I: Thông tin cá nhân / tổ chức</Title>
           <Paragraph style={{ color: "#555" }}>
-            Vui lòng điền đầy đủ thông tin cá nhân hoặc đại diện tổ chức của bạn.
+            Vui lòng điền đầy đủ thông tin cá nhân hoặc đại diện tổ chức của
+            bạn.
           </Paragraph>
 
-          <Form
-            form={form}
-            layout="vertical"
-            style={{ maxWidth: 800, margin: "0 auto", textAlign: "left" }}
+          <Form.Item
+            label="1. Họ và tên"
+            name="hoTen"
+            rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
           >
-            <Form.Item
-              label="1. Họ và tên"
-              name="hoTen"
-              rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
-            >
-              <Input placeholder="Ví dụ: Nguyễn Văn A" />
-            </Form.Item>
-
-            <Form.Item
-              label="2. Ngày/tháng/năm sinh"
-              name="ngaySinh"
-              rules={[{ required: true, message: "Vui lòng chọn ngày sinh" }]}
-            >
-              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              label="3. Số điện thoại"
-              name="dienThoai"
-              rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
-            >
-              <Input placeholder="Số điện thoại của bạn..." />
-            </Form.Item>
-
-            <Form.Item
-              label="4. Email"
-              name="email"
-              rules={[
-                { required: true, message: "Vui lòng nhập địa chỉ email" },
-                { type: "email", message: "Địa chỉ email không hợp lệ" },
-              ]}
-            >
-              <Input placeholder="Ví dụ: email@example.com" />
+            <Input placeholder="Ví dụ: Nguyễn Văn A" />
           </Form.Item>
 
-            <Form.Item
-              label="5. Tài khoản mạng xã hội của bạn (vui lòng gửi đường link)"
-              name="social"
-              rules={[{ required: true, message: "Vui lòng nhập link tài khoản" }]}
-            >
-              <Input placeholder="Nhập link tài khoản mạng xã hội..." />
-            </Form.Item>
-
-            <Form.Item
-              label="6. Địa chỉ thường trú của bạn (phường/xã, quận huyện, thành phố)"
-              name="diaChi"
-              rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
-            >
-              <Input placeholder="Nhập địa chỉ của bạn..." />
-            </Form.Item>
-
-            <Form.Item
-              label="7. Tên CLB/Đội/Nhóm/của bạn"
-              name="tenNhom"
-              rules={[{ required: true, message: "Vui lòng nhập tên nhóm" }]}
-            >
-              <Input placeholder="Nhập tên nhóm..." />
-            </Form.Item>
-
-            <Form.Item
-              label="8. Vai trò của bạn trong CLB/Đội/Nhóm"
-              name="vaiTro"
-              rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
-            >
-              <Radio.Group>
-                <Radio value="nguoiSangLap">Người sáng lập</Radio>
-                <Radio value="chiNhiem">Chủ nhiệm</Radio>
-                <Radio value="caNhan">Cá nhân</Radio>
-              </Radio.Group>
-            </Form.Item>
-
-            <Form.Item
-              label="9. Logo, hình ảnh nhận diện CLB/Đội/Nhóm thiện nguyện/của bạn (Chấp nhận các file ảnh )"
-              name="logo"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              rules={[{ required: true, message: "Vui lòng thêm hình ảnh" }]}
-            >
-              <Upload beforeUpload={() => false} listType="picture-card">
-                <Button icon={<UploadOutlined />}>Thêm ảnh</Button>
-              </Upload>
-            </Form.Item>
-
-           <Form.Item
-              label="10. Link / website mạng xã hội"
-              name="linkGioiThieu"
-              rules={[{ required: true, message: "Vui lòng nhập link hoặc mô tả hoạt động" }]}
-            >
-              <Input.TextArea
-                placeholder="Nhập link hoặc mô tả hoạt động..."
-                rows={3}
-              />
+          <Form.Item label="2. Ngày/tháng/năm sinh (Tùy chọn)" name="ngaySinh">
+            <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
           </Form.Item>
 
+          <Form.Item
+            label="3. Số điện thoại"
+            name="dienThoai"
+            rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
+          >
+            <Input placeholder="Số điện thoại của bạn..." />
+          </Form.Item>
 
-            <Form.Item
-              label="11. Thành tích, khen thưởng, được ghi nhận trong hoạt động tình nguyện, cộng đồng, xã hội"
-              name="thanhTich"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              rules={[{ required: true, message: "Vui lòng tải lên file minh chứng" }]}
+          <Form.Item
+            label="4. Email"
+            name="email"
+            rules={[
+              { required: true, message: "Vui lòng nhập địa chỉ email" },
+              { type: "email", message: "Địa chỉ email không hợp lệ" },
+            ]}
+          >
+            <Input placeholder="Ví dụ: email@example.com" />
+          </Form.Item>
+
+          <Form.Item
+            label="5. Tài khoản mạng xã hội của bạn (Tùy chọn)"
+            name="social"
+          >
+            <Input placeholder="Nhập link tài khoản mạng xã hội..." />
+          </Form.Item>
+
+          <Form.Item label="6. Địa chỉ thường trú (Tùy chọn)" name="diaChi">
+            <Input placeholder="Nhập địa chỉ của bạn..." />
+          </Form.Item>
+
+          <Form.Item label="7. Tên CLB/Đội/Nhóm (Tùy chọn)" name="tenNhom">
+            <Input placeholder="Nhập tên nhóm..." />
+          </Form.Item>
+
+          <Form.Item label="8. Vai trò (Tùy chọn)" name="vaiTro">
+            <Radio.Group>
+              <Radio value="nguoiSangLap">Người sáng lập</Radio>
+              <Radio value="chiNhiem">Chủ nhiệm</Radio>
+              <Radio value="caNhan">Cá nhân</Radio>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            label="9. Logo, hình ảnh nhận diện (Tùy chọn)"
+            name="logo"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) return e;
+              return e && e.fileList;
+            }}
+          >
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              customRequest={async ({ file, onSuccess, onError }) => {
+                try {
+                  const response = await uploadAPI.uploadImage(file);
+                  if (response.data.success) {
+                    file.url = response.data.url;
+                    onSuccess(response.data, file);
+                    message.success(`${file.name} uploaded successfully`);
+                  } else {
+                    onError(new Error(response.data.message));
+                  }
+                } catch (error) {
+                  onError(error);
+                  message.error(`${file.name} upload failed.`);
+                }
+              }}
             >
-              <Upload beforeUpload={() => false}>
-                <Button icon={<UploadOutlined />}>
-                  Tải lên file (PDF, hình ảnh...)
-                </Button>
-              </Upload>
-            </Form.Item>
-          </Form>
+              <Button icon={<UploadOutlined />}>Thêm ảnh</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item
+            label="10. Link / website mạng xã hội"
+            name="linkGioiThieu"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập link hoặc mô tả hoạt động",
+              },
+            ]}
+          >
+            <Input.TextArea
+              placeholder="Nhập link hoặc mô tả hoạt động..."
+              rows={3}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="11. Thành tích, khen thưởng (Tùy chọn)"
+            name="thanhTich"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) return e;
+              return e && e.fileList;
+            }}
+          >
+            <Upload
+              maxCount={5}
+              customRequest={async ({ file, onSuccess, onError }) => {
+                try {
+                  const response = await uploadAPI.uploadImage(file);
+                  if (response.data.success) {
+                    file.url = response.data.url;
+                    onSuccess(response.data, file);
+                  } else {
+                    onError(new Error(response.data.message));
+                  }
+                } catch (error) {
+                  onError(error);
+                }
+              }}
+            >
+              <Button icon={<UploadOutlined />}>
+                Tải lên file (PDF, hình ảnh...)
+              </Button>
+            </Upload>
+          </Form.Item>
         </>
       ),
     },
@@ -304,149 +387,191 @@ const TaoQuyMoi = () => {
       content: (
         <>
           <Title level={4}>Phần II: Thông tin quỹ</Title>
-          <Form
-            form={form}
-            layout="vertical"
-            style={{ maxWidth: 800, margin: "0 auto", textAlign: "left" }}
+
+          <Form.Item label="1. Mục đích sử dụng (Tùy chọn)" name="mucDich">
+            <Checkbox.Group
+              style={{ display: "flex", flexDirection: "column" }}
+            >
+              <Checkbox value="tiepNhan">Vận động, tiếp nhận đóng góp</Checkbox>
+              <Checkbox value="phatTrien">
+                Vận động gây quỹ nhóm phát triển cộng đồng
+              </Checkbox>
+              <Checkbox value="minhBach">
+                Công khai minh bạch đối với tổ chức, người dùng
+              </Checkbox>
+              <Checkbox value="khac">Mục khác</Checkbox>
+            </Checkbox.Group>
+          </Form.Item>
+
+          <Form.Item
+            label="2. Cam kết công khai thông tin quỹ (Tùy chọn)"
+            name="camKetCongKhai"
           >
-            <Form.Item
-              label="1. Anh chị/tổ chức cam kết sử dụng TKTT MB cho mục đích nào sau đây?"
-              name="mucDich"
-              rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 mục đích" }]}
-            >
-              <Checkbox.Group style={{ display: "flex", flexDirection: "column" }}>
-                <Checkbox value="tiepNhan">Vận động, tiếp nhận đóng góp</Checkbox>
-                <Checkbox value="phatTrien">
-                  Vận động gây quỹ nhóm phát triển cộng đồng
-                </Checkbox>
-                <Checkbox value="minhBach">
-                  Công khai minh bạch đối với tổ chức, người dùng
-                </Checkbox>
-                <Checkbox value="khac">Mục khác</Checkbox>
-              </Checkbox.Group>
-            </Form.Item>
+            <Radio.Group>
+              <Radio value="dongy">Đồng ý</Radio>
+              <Radio value="khongdongy">Không đồng ý</Radio>
+            </Radio.Group>
+          </Form.Item>
 
-            <Form.Item
-              label="2. Cam kết công khai thông tin quỹ"
-              name="camKetCongKhai"
-              rules={[{ required: true, message: "Vui lòng chọn đồng ý hoặc không" }]}
-            >
-              <Radio.Group>
-                <Radio value="dongy">Đồng ý</Radio>
-                <Radio value="khongdongy">Không đồng ý</Radio>
-              </Radio.Group>
-            </Form.Item>
+          <Form.Item
+            label="3. Tên quỹ"
+            name="tenQuy"
+            rules={[{ required: true, message: "Vui lòng nhập tên quỹ" }]}
+          >
+            <Input placeholder="Ví dụ: Chung tay vì miền Trung" />
+          </Form.Item>
 
-            <Form.Item
-              label="3. Tên quỹ"
-              name="tenQuy"
-              rules={[{ required: true, message: "Vui lòng nhập tên quỹ" }]}
-            >
-              <Input placeholder="Ví dụ: Chung tay vì miền Trung" />
-            </Form.Item>
+          <Form.Item
+            label="4. Mô tả ngắn"
+            name="moTaNgan"
+            rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn" }]}
+          >
+            <Input placeholder="Nhập mô tả ngắn..." />
+          </Form.Item>
 
-            <Form.Item
-              label="4. Mô tả ngắn"
-              name="moTaNgan"
-              rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn" }]}
-            >
-              <Input placeholder="Nhập mô tả ngắn..." />
-            </Form.Item>
+          <Form.Item
+            label="5. Giới thiệu quỹ"
+            name="gioiThieu"
+            rules={[
+              { required: true, message: "Vui lòng nhập giới thiệu quỹ" },
+            ]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="Nhập nội dung giới thiệu..."
+            />
+          </Form.Item>
 
-            <Form.Item
-              label="5. Giới thiệu quỹ"
-              name="gioiThieu"
-              rules={[{ required: true, message: "Vui lòng nhập giới thiệu quỹ" }]}
-            >
-              <Input.TextArea rows={3} placeholder="Nhập nội dung giới thiệu..." />
-            </Form.Item>
-
-            <Form.Item
-              label="6. Ảnh chính của quỹ"
-              name="anhChinh"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              rules={[{ required: true, message: "Vui lòng tải lên ảnh chính cho quỹ" }]}
-            >
-              <Upload beforeUpload={() => false} listType="picture-card" maxCount={1}>
-                <Button icon={<UploadOutlined />}>Tải ảnh chính</Button>
-              </Upload>
-            </Form.Item>
-
-            <Form.Item
-              label="7. Ảnh chi tiết"
-              name="anhThumbnail"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              rules={[{ required: true, message: "Vui lòng tải lên ít nhất 1 ảnh chi tiết" }]}
-            >
-              <Upload beforeUpload={() => false} listType="picture-card" multiple>
-                <Button icon={<UploadOutlined />}>Tải ảnh thumbnail</Button>
-              </Upload>
-            </Form.Item>
-
-            <Form.Item
-              label="8. Danh mục"
-              name="danhMuc"
-              rules={[{ required: true, message: "Vui lòng chọn ít nhất một danh mục!" }]}
-            >
-              <Checkbox.Group
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                <Checkbox value="Thiên tai">Thiên tai</Checkbox>
-                <Checkbox value="Giáo dục">Giáo dục</Checkbox>
-                <Checkbox value="Môi trường">Môi trường</Checkbox>
-                <Checkbox value="Trẻ em">Trẻ em</Checkbox>
-                <Checkbox value="Xóa nghèo">Xóa nghèo</Checkbox>
-                <Checkbox value="Người cao tuổi">Người cao tuổi</Checkbox>
-                <Checkbox value="Người khuyết tật">Người khuyết tật</Checkbox>
-                <Checkbox value="Dân tộc thiểu số">Dân tộc thiểu số</Checkbox>
-                <Checkbox value="Khác">Khác</Checkbox>
-              </Checkbox.Group>
-            </Form.Item>
-
-
-            <Form.Item
-              label="9. Số tiền mục tiêu (VNĐ)"
-              name="soTienMucTieu"
-              rules={[{ required: true, message: "Vui lòng nhập số tiền mục tiêu" }]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={100000}
-                formatter={(value) =>
-                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          <Form.Item
+            label="6. Ảnh chính của quỹ"
+            name="anhChinh"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) return e;
+              return e && e.fileList;
+            }}
+            rules={[
+              { required: true, message: "Vui lòng tải lên ảnh chính cho quỹ" },
+            ]}
+          >
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              customRequest={async ({ file, onSuccess, onError }) => {
+                try {
+                  const response = await uploadAPI.uploadImage(file);
+                  if (response.data.success) {
+                    file.url = response.data.url;
+                    onSuccess(response.data, file);
+                    message.success("Upload ảnh chính thành công");
+                  } else {
+                    onError(new Error(response.data.message));
+                  }
+                } catch (error) {
+                  onError(error);
+                  message.error("Upload ảnh chính thất bại");
                 }
-                parser={(value) => value.replace(/,/g, "")}
-                placeholder="Nhập số tiền mục tiêu..."
-              />
-            </Form.Item>
+              }}
+            >
+              <Button icon={<UploadOutlined />}>Tải ảnh chính</Button>
+            </Upload>
+          </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="10. Ngày bắt đầu"
-                  name="ngayBatDau"
-                  rules={[{ required: true, message: "Chọn ngày bắt đầu" }]}
-                >
-                  <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="11. Ngày kết thúc"
-                  name="ngayKetThuc"
-                  rules={[{ required: true, message: "Chọn ngày kết thúc" }]}
-                >
-                  <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
+          <Form.Item
+            label="7. Ảnh chi tiết (Tùy chọn)"
+            name="anhThumbnail"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) return e;
+              return e && e.fileList;
+            }}
+          >
+            <Upload
+              listType="picture-card"
+              multiple
+              customRequest={async ({ file, onSuccess, onError }) => {
+                try {
+                  const response = await uploadAPI.uploadImage(file);
+                  if (response.data.success) {
+                    file.url = response.data.url;
+                    onSuccess(response.data, file);
+                  } else {
+                    onError(new Error(response.data.message));
+                  }
+                } catch (error) {
+                  onError(error);
+                }
+              }}
+            >
+              <Button icon={<UploadOutlined />}>Tải ảnh thumbnail</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item
+            label="8. Danh mục"
+            name="danhMuc"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn ít nhất một danh mục!",
+              },
+            ]}
+          >
+            <Checkbox.Group
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <Checkbox value="Thiên tai">Thiên tai</Checkbox>
+              <Checkbox value="Giáo dục">Giáo dục</Checkbox>
+              <Checkbox value="Môi trường">Môi trường</Checkbox>
+              <Checkbox value="Trẻ em">Trẻ em</Checkbox>
+              <Checkbox value="Xóa nghèo">Xóa nghèo</Checkbox>
+              <Checkbox value="Người cao tuổi">Người cao tuổi</Checkbox>
+              <Checkbox value="Người khuyết tật">Người khuyết tật</Checkbox>
+              <Checkbox value="Dân tộc thiểu số">Dân tộc thiểu số</Checkbox>
+              <Checkbox value="Khác">Khác</Checkbox>
+            </Checkbox.Group>
+          </Form.Item>
+
+          <Form.Item
+            label="9. Số tiền mục tiêu (VNĐ)"
+            name="soTienMucTieu"
+            rules={[
+              { required: true, message: "Vui lòng nhập số tiền mục tiêu" },
+            ]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              min={100000}
+              formatter={(value) =>
+                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+              }
+              parser={(value) => value.replace(/,/g, "")}
+              placeholder="Nhập số tiền mục tiêu..."
+            />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="10. Ngày bắt đầu"
+                name="ngayBatDau"
+                rules={[{ required: true, message: "Chọn ngày bắt đầu" }]}
+              >
+                <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="11. Ngày kết thúc"
+                name="ngayKetThuc"
+                rules={[{ required: true, message: "Chọn ngày kết thúc" }]}
+              >
+                <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
         </>
       ),
     },
@@ -462,68 +587,78 @@ const TaoQuyMoi = () => {
             Vui lòng nhập chính xác thông tin tài khoản nhận quyên góp.
           </Paragraph>
 
-          <Form
-            form={form}
-            layout="vertical"
-            style={{ maxWidth: 800, margin: "0 auto", textAlign: "left" }}
+          <Form.Item
+            label="1. Tên chủ tài khoản"
+            name="chuTaiKhoan"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên chủ tài khoản" },
+            ]}
           >
-            <Form.Item
-              label="1. Tên chủ tài khoản"
-              name="chuTaiKhoan"
-              rules={[{ required: true, message: "Vui lòng nhập tên chủ tài khoản" }]}
-            >
-              <Input placeholder="Nhập tên chủ tài khoản..." />
-            </Form.Item>
+            <Input placeholder="Nhập tên chủ tài khoản..." />
+          </Form.Item>
 
-            <Form.Item
-              label="2. Số tài khoản"
-              name="soTaiKhoan"
-              rules={[{ required: true, message: "Vui lòng nhập số tài khoản" }]}
-            >
-              <Input
-                placeholder="Nhập số tài khoản ngân hàng..."
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={20}
-              />
-            </Form.Item>
+          <Form.Item
+            label="2. Số tài khoản"
+            name="soTaiKhoan"
+            rules={[{ required: true, message: "Vui lòng nhập số tài khoản" }]}
+          >
+            <Input
+              placeholder="Nhập số tài khoản ngân hàng..."
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={20}
+            />
+          </Form.Item>
 
-            <Form.Item
-              label="3. Ngân hàng"
-              name="nganHang"
-              rules={[{ required: true, message: "Vui lòng chọn ngân hàng" }]}
-            >
-              <Select placeholder="Chọn ngân hàng">
-                <Option value="MB Bank">MB Bank</Option>
-                <Option value="Vietcombank">Vietcombank</Option>
-                <Option value="BIDV">BIDV</Option>
-                <Option value="Techcombank">Techcombank</Option>
-                <Option value="Agribank">Agribank</Option>
-                <Option value="Sacombank">Sacombank</Option>
-                <Option value="ACB">ACB</Option>
-                <Option value="Khác">Khác</Option>
-              </Select>
-            </Form.Item>
+          <Form.Item
+            label="3. Ngân hàng"
+            name="nganHang"
+            rules={[{ required: true, message: "Vui lòng chọn ngân hàng" }]}
+          >
+            <Select placeholder="Chọn ngân hàng">
+              <Option value="MB Bank">MB Bank</Option>
+              <Option value="Vietcombank">Vietcombank</Option>
+              <Option value="BIDV">BIDV</Option>
+              <Option value="Techcombank">Techcombank</Option>
+              <Option value="Agribank">Agribank</Option>
+              <Option value="Sacombank">Sacombank</Option>
+              <Option value="ACB">ACB</Option>
+              <Option value="Khác">Khác</Option>
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              label="4. Chi nhánh ngân hàng"
-              name="chiNhanh"
-              rules={[{ required: true, message: "Vui lòng nhập chi nhánh ngân hàng" }]}
-            >
-              <Input placeholder="Nhập chi nhánh..." />
-            </Form.Item>
+          <Form.Item label="4. Chi nhánh ngân hàng (Tùy chọn)" name="chiNhanh">
+            <Input placeholder="Nhập chi nhánh..." />
+          </Form.Item>
 
-            <Form.Item
-              label="5. Mã QR nhận quyên góp (nếu có)"
-              name="qrCode"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+          <Form.Item
+            label="5. Mã QR nhận quyên góp (nếu có)"
+            name="qrCode"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) return e;
+              return e && e.fileList;
+            }}
+          >
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              customRequest={async ({ file, onSuccess, onError }) => {
+                try {
+                  const response = await uploadAPI.uploadImage(file);
+                  if (response.data.success) {
+                    file.url = response.data.url;
+                    onSuccess(response.data, file);
+                  } else {
+                    onError(new Error(response.data.message));
+                  }
+                } catch (error) {
+                  onError(error);
+                }
+              }}
             >
-              <Upload beforeUpload={() => false} listType="picture-card" maxCount={1}>
-                <Button icon={<UploadOutlined />}>Tải lên mã QR</Button>
-              </Upload>
-            </Form.Item>
-          </Form>
+              <Button icon={<UploadOutlined />}>Tải lên mã QR</Button>
+            </Upload>
+          </Form.Item>
         </>
       ),
     },
@@ -547,8 +682,8 @@ const TaoQuyMoi = () => {
           </Title>
 
           <Paragraph style={{ fontSize: 16, color: "#555", marginBottom: 30 }}>
-            Hãy cùng chúng tôi tạo nên những quỹ thiện nguyện minh bạch, hiệu quả và ý nghĩa.
-            Quy trình đăng ký gồm 3 bước đơn giản.
+            Hãy cùng chúng tôi tạo nên những quỹ thiện nguyện minh bạch, hiệu
+            quả và ý nghĩa. Quy trình đăng ký gồm 3 bước đơn giản.
           </Paragraph>
 
           {!walletAddress && (
@@ -571,9 +706,18 @@ const TaoQuyMoi = () => {
           )}
 
           {walletAddress && (
-            <div style={{ marginBottom: 20, textAlign: "center", padding: "10px", backgroundColor: "#f0f9f4", borderRadius: 8 }}>
+            <div
+              style={{
+                marginBottom: 20,
+                textAlign: "center",
+                padding: "10px",
+                backgroundColor: "#f0f9f4",
+                borderRadius: 8,
+              }}
+            >
               <Paragraph style={{ margin: 0, color: "#1e9c45" }}>
-                ✅ Đã kết nối: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                ✅ Đã kết nối: {walletAddress.slice(0, 6)}...
+                {walletAddress.slice(-4)}
               </Paragraph>
             </div>
           )}
@@ -588,12 +732,28 @@ const TaoQuyMoi = () => {
             ))}
           </Steps>
 
-          <div style={{ marginBottom: 30 }}>{steps[currentStep].content}</div>
+          <Form
+            form={form}
+            layout="vertical"
+            style={{ maxWidth: 800, margin: "0 auto", textAlign: "left" }}
+          >
+            {steps.map((step, index) => (
+              <div
+                key={index}
+                style={{ display: currentStep === index ? "block" : "none" }}
+              >
+                {step.content}
+              </div>
+            ))}
+          </Form>
 
           <Row justify="center" gutter={16}>
             {currentStep > 0 && (
               <Col>
-                <Button onClick={prev} style={{ borderRadius: 8, padding: "0 30px" }}>
+                <Button
+                  onClick={prev}
+                  style={{ borderRadius: 8, padding: "0 30px" }}
+                >
                   Quay lại
                 </Button>
               </Col>
@@ -624,7 +784,7 @@ const TaoQuyMoi = () => {
                     borderRadius: 8,
                     padding: "0 40px",
                   }}
-                  onClick={() => form.validateFields().then(handleFinish)}
+                  onClick={handleFinish}
                   icon={<CheckCircleOutlined />}
                   loading={loading}
                   disabled={!walletAddress}
