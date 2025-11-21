@@ -1,22 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Input, Button, Select, message } from "antd";
 
 const { TextArea } = Input;
 const { Option } = Select;
 
-const Infor = ({ user }) => {
-  const [formData, setFormData] = useState({
-    name: user.name || "",
-    gender: user.gender || "",
-    birthDate: user.birthDate || "",
-    phone: user.phone || "",
-    email: user.email || "",
-    address: user.address || "",
-    bio: user.bio || "",
-  });
+const mapUserToForm = (user) => ({
+  name: user?.username || "",
+  gender: user?.gender || "",
+  birthDate: user?.birthDate || "",
+  phone: user?.phone || "",
+  email: user?.email || "",
+  address: user?.contactAddress || "",
+  bio: user?.bio || "",
+});
+
+const Infor = ({ user, onProfileUpdate }) => {
+  const [formData, setFormData] = useState(mapUserToForm(user));
 
   const [editing, setEditing] = useState(false); 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setFormData(mapUserToForm(user));
+  }, [user]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -24,15 +30,30 @@ const Infor = ({ user }) => {
 
   const handleButtonClick = () => {
     if (editing) {
-     
+      if (!onProfileUpdate) return;
       setLoading(true);
-      setTimeout(() => {
-        const updatedUser = { ...user, ...formData };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        setLoading(false);
-        message.success("Thông tin đã được cập nhật!");
-        setEditing(false);
-      }, 1000); 
+      const payload = {
+        username: formData.name,
+        gender: formData.gender,
+        birthDate: formData.birthDate,
+        phone: formData.phone,
+        email: formData.email,
+        contactAddress: formData.address,
+        bio: formData.bio,
+      };
+      console.log("Sending update payload:", payload);
+
+      onProfileUpdate(payload)
+        .then((updated) => {
+          setFormData(mapUserToForm(updated));
+          message.success("Đã cập nhật thông tin cá nhân!");
+          setEditing(false);
+        })
+        .catch((err) => {
+          console.error("Update failed:", err);
+          message.error(err.message || "Không thể cập nhật thông tin. Vui lòng thử lại.");
+        })
+        .finally(() => setLoading(false));
     } else {
       setEditing(true); 
     }

@@ -1,44 +1,34 @@
-import React, { useState } from "react";
-import { Form, Input, Button, Checkbox, message } from "antd";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import React, { useState, useEffect } from "react";
+import { Button, message } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
-import { authAPI } from "../services/api";
+import { loginWithWallet, ensureWalletLogin } from "../services/authService";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values) => {
+  useEffect(() => {
+    const autoLogin = async () => {
+      const user = await ensureWalletLogin();
+      if (user) {
+        navigate(location.state?.from || "/");
+      }
+    };
+
+    autoLogin();
+  }, [location.state, navigate]);
+
+  const handleConnectWallet = async () => {
     try {
       setLoading(true);
-      
-      const response = await authAPI.login({
-        username: values.username,
-        password: values.password,
-      });
-
-      if (response.data.success || response.data.token) {
-        // Lưu token và user info
-        const token = response.data.token || response.data.data?.token;
-        const user = response.data.user || response.data.data?.user || {
-          username: values.username,
-          avatar: "https://i.pravatar.cc/150?img=3",
-        };
-
-        if (token) {
-          localStorage.setItem("token", token);
-        }
-        localStorage.setItem("user", JSON.stringify(user));
-
-        message.success("Đăng nhập thành công!");
-        navigate(location.state?.from || "/");
-      } else {
-        message.error(response.data.message || "Đăng nhập thất bại!");
-      }
+      await loginWithWallet();
+      message.success("Đã kết nối ví thành công!");
+      navigate(location.state?.from || "/");
     } catch (error) {
-      console.error("Login error:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Tài khoản hoặc mật khẩu không đúng!";
+      console.error("Wallet login error:", error);
+      const errorMessage =
+        error?.message || "Không thể kết nối ví. Vui lòng thử lại.";
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -46,7 +36,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={{ height: "100vh", display: "flex" }}>
+    <div style={{ minHeight: "100vh", display: "flex" }}>
       <div
         style={{
           flex: 1,
@@ -58,7 +48,7 @@ const LoginPage = () => {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          color: "#000000ff",
+          color: "#000",
           textAlign: "center",
           padding: "0 20px",
         }}
@@ -69,8 +59,11 @@ const LoginPage = () => {
           style={{ width: 100, marginBottom: 20 }}
         />
         <h2 style={{ fontWeight: "bold", fontSize: 24 }}>
-          Chung tay trao yêu thương, <br /> cùng nhau tạo niềm tin
+          Kết nối ví MetaMask để đăng nhập
         </h2>
+        <p style={{ maxWidth: 360, color: "#333" }}>
+          Lần đầu kết nối, hệ thống sẽ tự động tạo tài khoản của bạn.
+        </p>
       </div>
 
       <div
@@ -92,57 +85,33 @@ const LoginPage = () => {
             textAlign: "center",
           }}
         >
-          Đăng nhập hệ thống
+          Đăng nhập bằng ví
         </h2>
 
-        <Form
-          name="login"
-          onFinish={onFinish}
-          initialValues={{ remember: true }}
-          layout="vertical"
-          style={{ width: "100%", maxWidth: 400 }}
+        <p style={{ marginBottom: 20, color: "#666", textAlign: "center" }}>
+          Bạn chỉ cần kết nối ví MetaMask để truy cập toàn bộ tính năng.
+        </p>
+
+        <Button
+          type="primary"
+          size="large"
+          loading={loading}
+          onClick={handleConnectWallet}
+          style={{
+            width: "100%",
+            maxWidth: 300,
+            borderRadius: 30,
+            background: "linear-gradient(90deg, #b6eb7a 0%, #52c41a 100%)",
+            border: "none",
+            fontWeight: 600,
+            height: 50,
+          }}
         >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập!" }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="Tên đăng nhập" size="large" />
-          </Form.Item>
+          {loading ? "Đang kết nối..." : "Kết nối ví MetaMask"}
+        </Button>
 
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" size="large" />
-          </Form.Item>
-
-          <Form.Item name="remember" valuePropName="checked">
-            <Checkbox>Ghi nhớ đăng nhập</Checkbox>
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              loading={loading}
-              style={{
-                width: "100%",
-                backgroundColor: "#52c41a",
-                border: "none",
-                borderRadius: "8px",
-              }}
-            >
-              Đăng nhập
-            </Button>
-          </Form.Item>
-        </Form>
-
-        <p style={{ marginTop: "15px", fontSize: "14px", textAlign: "center" }}>
-          Chưa có tài khoản?{" "}
-          <a href="/register" style={{ color: "#52c41a", fontWeight: "500" }}>
-            Đăng ký ngay
-          </a>
+        <p style={{ marginTop: 20, color: "#888", textAlign: "center" }}>
+          Không cần đăng ký hay nhập mật khẩu.
         </p>
       </div>
     </div>

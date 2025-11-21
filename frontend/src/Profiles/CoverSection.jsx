@@ -1,13 +1,21 @@
-import React, { useState, useRef } from "react";
-import { Avatar } from "antd";
+import React, { useState, useRef, useEffect } from "react";
+import { Avatar, message } from "antd";
 
-const CoverSection = ({ user }) => {
-  const [cover, setCover] = useState(
-    user.cover || "https://cdn.pixabay.com/photo/2021/08/20/03/57/boy-6559419_1280.jpg"
-  );
-  const [avatar, setAvatar] = useState(
-    user.avatar || "https://i.pinimg.com/736x/06/27/e4/0627e47e1b9c55a407132520dcf6091b.jpg"
-  );
+const defaultCover = "https://cdn.pixabay.com/photo/2021/08/20/03/57/boy-6559419_1280.jpg";
+const defaultAvatar = "https://i.pinimg.com/736x/06/27/e4/0627e47e1b9c55a407132520dcf6091b.jpg";
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const CoverSection = ({ user, onProfileUpdate }) => {
+  const [cover, setCover] = useState(user.cover || defaultCover);
+  const [avatar, setAvatar] = useState(user.avatar || defaultAvatar);
+  const [updatingField, setUpdatingField] = useState(null);
 
   const [hoverCover, setHoverCover] = useState(false);
   const [hoverAvatar, setHoverAvatar] = useState(false);
@@ -15,20 +23,46 @@ const CoverSection = ({ user }) => {
   const coverInputRef = useRef(null);
   const avatarInputRef = useRef(null);
 
+  useEffect(() => {
+    setCover(user.cover || defaultCover);
+  }, [user.cover]);
+
+  useEffect(() => {
+    setAvatar(user.avatar || defaultAvatar);
+  }, [user.avatar]);
+
+  const handleImageUpdate = async (file, field) => {
+    if (!file || !onProfileUpdate) return;
+    try {
+      setUpdatingField(field);
+      const base64 = await fileToBase64(file);
+      if (field === "cover") {
+        setCover(base64);
+      } else {
+        setAvatar(base64);
+      }
+      await onProfileUpdate({ [field]: base64 });
+      message.success("Đã cập nhật ảnh thành công!");
+    } catch (error) {
+      message.error("Không thể cập nhật ảnh. Vui lòng thử lại.");
+      if (field === "cover") {
+        setCover(user.cover || defaultCover);
+      } else {
+        setAvatar(user.avatar || defaultAvatar);
+      }
+    } finally {
+      setUpdatingField(null);
+    }
+  };
+
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const imageURL = URL.createObjectURL(file);
-      setCover(imageURL);
-    }
+    handleImageUpdate(file, "cover");
   };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const imageURL = URL.createObjectURL(file);
-      setAvatar(imageURL);
-    }
+    handleImageUpdate(file, "avatar");
   };
 
   return (
@@ -126,8 +160,17 @@ const CoverSection = ({ user }) => {
         </div>
 
         <div>
-          <h2 style={{ marginTop: "80px", fontWeight: "bold" }}>SÚP LƠ</h2>
-          <p style={{ marginTop: -10, color: "#888" }}>@{user.username}</p>
+          <h2 style={{ marginTop: "80px", fontWeight: "bold" }}>
+            {user.username || "Người dùng"}
+          </h2>
+          <p style={{ marginTop: -10, color: "#888" }}>
+            {user.address
+              ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}`
+              : "@unknown"}
+          </p>
+          {updatingField && (
+            <p style={{ color: "#52c41a", fontSize: 12 }}>Đang cập nhật ảnh...</p>
+          )}
         </div>
       </div>
     </div>

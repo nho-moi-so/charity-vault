@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import fundRoutes from './routes/funds.js';
 import authRoutes from './routes/auth.js';
+import donationRoutes from './routes/donations.js';
 import eventListener from './services/eventListener.js';
 
 dotenv.config();
@@ -18,6 +19,7 @@ app.use(express.json());
 // Routes
 app.use('/api/funds', fundRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/donations', donationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

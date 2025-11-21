@@ -1,23 +1,58 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Menu, Input, Button, Avatar, Dropdown } from "antd";
+import { Layout, Menu, Input, Button, Avatar, Dropdown, message } from "antd";
 import { SearchOutlined, UserOutlined, DownOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import {
+  ensureWalletLogin,
+  loginWithWallet,
+  logout as logoutService,
+  getStoredUser,
+} from "../services/authService";
 
 const { Header } = Layout;
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) setUser(storedUser);
+    const storedUser = getStoredUser();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+
+    const syncUser = async () => {
+      const walletUser = await ensureWalletLogin();
+      if (walletUser) {
+        setUser(walletUser);
+      }
+    };
+
+    syncUser();
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    logoutService();
     setUser(null);
     navigate("/");
+  };
+
+  const handleConnectWallet = async () => {
+    if (connecting) return;
+    try {
+      setConnecting(true);
+      const connectedUser = await loginWithWallet();
+      setUser(connectedUser);
+      message.success("Đã kết nối ví thành công!");
+    } catch (error) {
+      console.error("Connect wallet error:", error);
+      const errorMessage =
+        error?.message || "Không thể kết nối ví. Vui lòng thử lại.";
+      message.error(errorMessage);
+    } finally {
+      setConnecting(false);
+    }
   };
 
   // menu cho tài khoản người dùng
@@ -101,7 +136,10 @@ const Navbar = () => {
           items={[
             { key: "1", label: <span onClick={() => navigate("/")}>Trang chủ</span> },
             { key: "2", label: <span onClick={() => navigate("/funds")}>Gây quỹ</span> },
-            { key: "3", label: <span onClick={() => navigate("/gioi-thieu-quy")}>Giới thiệu</span> },
+          {
+            key: "3",
+            label: <span onClick={() => navigate("/gioi-thieu-quy")}>Giới thiệu</span>,
+          },
             {
               key: "4",
               label: (
@@ -150,22 +188,28 @@ const Navbar = () => {
                 }}
               >
                 <Avatar
-                  src={
-                    "https://i.pinimg.com/736x/06/27/e4/0627e47e1b9c55a407132520dcf6091b.jpg"
-                  }
+                  src={user?.avatar || "https://i.pravatar.cc/150?img=3"}
                   size={40}
                   icon={!user?.avatar && <UserOutlined />}
                 />
-                <DownOutlined style={{ color: "#000" }} />
+                <span style={{ fontSize: 14, color: "#333", display: "flex", alignItems: "center", gap: 4 }}>
+                  {user?.username ||
+                    (user?.address
+                      ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}`
+                      : "Người dùng")}
+                  <DownOutlined style={{ fontSize: 12 }} />
+                </span>
               </div>
             </Dropdown>
           ) : (
             <Button
-              type="text"
-              style={{ color: "#8c8c8c", fontWeight: 500 }}
-              onClick={() => navigate("/login", { state: { from: "/" } })}
+              type="primary"
+              ghost
+              style={{ borderRadius: 20 }}
+              onClick={handleConnectWallet}
+              loading={connecting}
             >
-              Đăng nhập
+              Kết nối ví
             </Button>
           )}
         </div>

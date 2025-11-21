@@ -27,7 +27,12 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { createFund, connectWallet, getCurrentAddress } from "../services/Web3Service";
+import { createFund } from "../services/Web3Service";
+import {
+  ensureWalletLogin,
+  loginWithWallet,
+  getStoredUser,
+} from "../services/authService";
 import { fundAPI } from "../services/api";
 
 const { Title, Paragraph } = Typography;
@@ -46,17 +51,25 @@ const TaoQuyMoi = () => {
   }, []);
 
   const checkWalletConnection = async () => {
-    const address = await getCurrentAddress();
-    setWalletAddress(address);
+    const storedUser = getStoredUser();
+    if (storedUser?.address) {
+      setWalletAddress(storedUser.address);
+      return;
+    }
+    const user = await ensureWalletLogin();
+    if (user?.address) {
+      setWalletAddress(user.address);
+    }
   };
 
   const handleConnectWallet = async () => {
     try {
-      const address = await connectWallet();
-      setWalletAddress(address);
+      const user = await loginWithWallet();
+      setWalletAddress(user.address);
       message.success("Đã kết nối ví thành công!");
     } catch (error) {
-      message.error("Không thể kết nối ví. Vui lòng cài đặt MetaMask.");
+      console.error("Connect wallet error:", error);
+      message.error(error?.message || "Không thể kết nối ví. Vui lòng thử lại.");
     }
   };
 

@@ -65,23 +65,33 @@ export const fundAPI = {
 
 // API functions cho Authentication
 export const authAPI = {
-  // Đăng ký
-  register: (data) => api.post('/auth/register', data),
+  // Kết nối ví và đăng nhập
+  connectWallet: (data) => api.post('/auth/connect', data),
   
-  // Đăng nhập
-  login: (data) => api.post('/auth/login', data),
-  
-  // Đăng xuất
+  // Đăng xuất (client side)
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('walletAddress');
   },
-  
-  // Lấy thông tin user hiện tại
-  getCurrentUser: () => api.get('/auth/me'),
   
   // Cập nhật profile
   updateProfile: (data) => api.put('/auth/profile', data),
+
+  // Lấy thông tin user theo địa chỉ ví
+  getUser: (address) => api.get(`/auth/${address}`),
+
+  // Lấy danh sách users
+  getUsers: (params = {}) => api.get('/auth', { params }),
+};
+
+// API functions cho Donations
+export const donationAPI = {
+  // Lấy lịch sử giao dịch của user
+  getUserHistory: (address, params = {}) => api.get(`/donations/user/${address}`, { params }),
+  
+  // Lấy lịch sử giao dịch của quỹ
+  getFundHistory: (fundId, params = {}) => api.get(`/donations/fund/${fundId}`, { params }),
 };
 
 export default api;

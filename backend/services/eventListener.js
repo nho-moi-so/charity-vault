@@ -1,5 +1,6 @@
 import { contractReadOnly, provider, CONTRACT_ADDRESS } from '../config/contract.js';
 import Fund from '../models/Fund.js';
+import Donation from '../models/Donation.js';
 import { ethers } from 'ethers';
 
 class EventListener {
@@ -52,7 +53,24 @@ class EventListener {
         const fundIdNum = fundId.toString();
         console.log(`DonationReceived event: ${amount} to fund ${fundIdNum}`);
 
-        // Cập nhật từ blockchain để đảm bảo dữ liệu chính xác
+        // 1. Lưu lịch sử giao dịch vào bảng Donation
+        try {
+          await Donation.create({
+            transactionHash: event.log.transactionHash.toLowerCase(),
+            fundId: fundIdNum,
+            donor: donor.toLowerCase(),
+            amount: amount.toString(),
+            timestamp: new Date()
+          });
+          console.log(`Donation recorded: ${event.log.transactionHash}`);
+        } catch (err) {
+          // Bỏ qua lỗi duplicate key nếu event được xử lý lại
+          if (err.code !== 11000) {
+            console.error('Error saving donation record:', err);
+          }
+        }
+
+        // 2. Cập nhật Fund (logic cũ)
         const fundData = await contractReadOnly.getFund(fundId);
         const balance = await contractReadOnly.fundBalance(fundId);
 

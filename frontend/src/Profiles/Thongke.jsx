@@ -3,8 +3,8 @@ import { Row, Col } from "antd";
 import { DollarOutlined, FundOutlined } from "@ant-design/icons";
 
 const Thongke = ({ user }) => {
-  const totalDonated = user.totalDonated || 0;
-  const totalFunds = user.totalFunds || 0;
+  const totalDonated = Number(user.totalDonated || 0);
+  const totalFunds = user.totalFundsCreated ?? user.totalFunds ?? 0;
 
   const cardStyle = {
     background: "rgba(255,255,255,0.8)",

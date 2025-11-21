@@ -1,6 +1,23 @@
 import User from '../models/User.js';
 import { ethers } from 'ethers';
 
+const formatUserResponse = (user) => ({
+  address: user.address,
+  username: user.username || '',
+  email: user.email || '',
+  avatar: user.avatar || '',
+  cover: user.cover || '',
+  bio: user.bio || '',
+  gender: user.gender || '',
+  birthDate: user.birthDate || '',
+  phone: user.phone || '',
+  contactAddress: user.contactAddress || '',
+  totalFundsCreated: user.totalFundsCreated || 0,
+  totalDonated: user.totalDonated || '0',
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
+
 class AuthController {
   // Kết nối ví = "Đăng nhập" (Web3 style)
   // Frontend sẽ gửi địa chỉ ví và signature để verify
@@ -41,15 +58,7 @@ class AuthController {
 
       res.json({
         success: true,
-        user: {
-          address: user.address,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar,
-          bio: user.bio,
-          totalFundsCreated: user.totalFundsCreated,
-          totalDonated: user.totalDonated
-        }
+        user: formatUserResponse(user)
       });
     } catch (error) {
       console.error('Error in connectWallet:', error);
@@ -61,7 +70,19 @@ class AuthController {
   async updateProfile(req, res) {
     try {
       const { address } = req.body;
-      const { username, email, avatar, bio } = req.body;
+      const {
+        username,
+        email,
+        avatar,
+        cover,
+        bio,
+        gender,
+        birthDate,
+        phone,
+        contactAddress
+      } = req.body;
+
+      console.log('Update Profile Request Body:', req.body); // Debug log
 
       if (!address) {
         return res.status(400).json({ error: 'Address is required' });
@@ -77,22 +98,19 @@ class AuthController {
       if (username !== undefined) user.username = username;
       if (email !== undefined) user.email = email;
       if (avatar !== undefined) user.avatar = avatar;
+      if (cover !== undefined) user.cover = cover;
       if (bio !== undefined) user.bio = bio;
+      if (gender !== undefined) user.gender = gender;
+      if (birthDate !== undefined) user.birthDate = birthDate;
+      if (phone !== undefined) user.phone = phone;
+      if (contactAddress !== undefined) user.contactAddress = contactAddress;
       user.updatedAt = new Date();
 
       await user.save();
 
       res.json({
         success: true,
-        user: {
-          address: user.address,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar,
-          bio: user.bio,
-          totalFundsCreated: user.totalFundsCreated,
-          totalDonated: user.totalDonated
-        }
+        user: formatUserResponse(user)
       });
     } catch (error) {
       console.error('Error in updateProfile:', error);
@@ -116,16 +134,7 @@ class AuthController {
 
       res.json({
         success: true,
-        user: {
-          address: user.address,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar,
-          bio: user.bio,
-          totalFundsCreated: user.totalFundsCreated,
-          totalDonated: user.totalDonated,
-          createdAt: user.createdAt
-        }
+        user: formatUserResponse(user)
       });
     } catch (error) {
       console.error('Error in getUser:', error);

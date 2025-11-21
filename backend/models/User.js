@@ -24,10 +24,34 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  cover: {
+    type: String,
+    default: ''
+  },
   bio: {
     type: String,
     default: '',
     maxlength: 500
+  },
+  gender: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  birthDate: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  phone: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  contactAddress: {
+    type: String,
+    default: '',
+    trim: true
   },
   // Thống kê
   totalFundsCreated: {
