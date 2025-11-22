@@ -3,6 +3,7 @@ cache
 artifacts
 coverage
 .env
+.env.local
 typechain-types
 dist
 

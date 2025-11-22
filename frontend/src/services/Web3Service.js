@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 // Địa chỉ Smart Contract - có thể cấu hình qua environment variable
 const CONTRACT_ADDRESS =
   process.env.REACT_APP_CONTRACT_ADDRESS ||
-  "0xAB9B8753d8551f9f427032a7743a51A57c56bA52";
+  "0x48d617fE605f380f065e7F9a44A545d03496755a";
 
 // ABI đầy đủ của CharityVault contract
 const CONTRACT_ABI = [
@@ -275,6 +275,57 @@ const getReadOnlyContract = () => {
 };
 
 /**
+ * Kiểm tra và chuyển đổi sang mạng Sepolia nếu cần
+ */
+const checkAndSwitchNetwork = async () => {
+  if (!window.ethereum) return;
+
+  const SEPOLIA_CHAIN_ID = "0xaa36a7"; // 11155111
+
+  try {
+    const chainId = await window.ethereum.request({ method: "eth_chainId" });
+    console.log("Current chainId:", chainId);
+    if (chainId !== SEPOLIA_CHAIN_ID) {
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: SEPOLIA_CHAIN_ID }],
+        });
+      } catch (switchError) {
+        // This error code indicates that the chain has not been added to MetaMask.
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: SEPOLIA_CHAIN_ID,
+                  chainName: "Sepolia Test Network",
+                  nativeCurrency: {
+                    name: "SepoliaETH",
+                    symbol: "SepoliaETH",
+                    decimals: 18,
+                  },
+                  rpcUrls: ["https://sepolia.infura.io/v3/"], // Public RPC or Infura
+                  blockExplorerUrls: ["https://sepolia.etherscan.io"],
+                },
+              ],
+            });
+          } catch (addError) {
+            throw new Error("Không thể thêm mạng Sepolia vào ví.");
+          }
+        } else {
+          throw new Error("Không thể chuyển đổi sang mạng Sepolia.");
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Lỗi kiểm tra mạng:", error);
+    throw error;
+  }
+};
+
+/**
  * Kết nối ví MetaMask
  * @returns {Promise<string>} Địa chỉ ví đã kết nối
  */
@@ -284,6 +335,7 @@ export const connectWallet = async () => {
   }
 
   try {
+    await checkAndSwitchNetwork();
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
@@ -336,6 +388,7 @@ export const getCurrentEthPrice = async () => {
  */
 export const createFund = async (title, metadataURI) => {
   try {
+    await checkAndSwitchNetwork();
     const contract = await getContract();
     console.log("Calling createFund with:", { title, metadataURI });
     const tx = await contract.createFund(title, metadataURI);
@@ -356,6 +409,7 @@ export const createFund = async (title, metadataURI) => {
  */
 export const handleDonation = async (fundId, amountETHString) => {
   try {
+    await checkAndSwitchNetwork();
     const contract = await getContract();
 
     // Chuyển đổi ETH string sang Wei
@@ -384,6 +438,7 @@ export const handleDonation = async (fundId, amountETHString) => {
  */
 export const withdrawFunds = async (fundId, amountETHString) => {
   try {
+    await checkAndSwitchNetwork();
     const contract = await getContract();
 
     const amountWei = ethers.parseEther(amountETHString);

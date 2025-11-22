@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Row, Col, Typography, Breadcrumb, Divider, Spin, message } from "antd";
-import { HomeOutlined } from "@ant-design/icons";
+import {
+  Row,
+  Col,
+  Typography,
+  Breadcrumb,
+  Divider,
+  Spin,
+  message,
+  Button,
+  Modal,
+  InputNumber,
+} from "antd";
+import { HomeOutlined, WalletOutlined } from "@ant-design/icons";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FooterSection from "../components/FooterSection";
@@ -10,7 +21,11 @@ import FundDescription from "../Details/FundDescription";
 import FundCreatorInfo from "../Details/FundCreatorInfo";
 import FundOtherCampaigns from "../Details/FundOtherCampaigns";
 import { fundAPI } from "../services/api";
-import { getFundInfo } from "../services/Web3Service";
+import {
+  getFundInfo,
+  getCurrentAddress,
+  withdrawFunds,
+} from "../services/Web3Service";
 
 const { Title } = Typography;
 
@@ -20,6 +35,12 @@ const FundDetail = () => {
   const [fund, setFund] = useState(null);
   const [blockchainData, setBlockchainData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Withdraw State
+  const [isOwner, setIsOwner] = useState(false);
+  const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -39,12 +60,25 @@ const FundDetail = () => {
 
         // Lấy thêm data từ blockchain để có thông tin mới nhất
         try {
-          // Sử dụng fundId từ database để query blockchain, không dùng id từ params (là _id của MongoDB)
+          // Sử dụng fundId từ database để query blockchain
           const blockchainInfo = await getFundInfo(response.data.fund.fundId);
           setBlockchainData(blockchainInfo);
+
+          // Kiểm tra quyền sở hữu
+          const currentAddr = await getCurrentAddress();
+          if (
+            currentAddr &&
+            blockchainInfo.owner &&
+            currentAddr.toLowerCase() === blockchainInfo.owner.toLowerCase()
+          ) {
+            setIsOwner(true);
+          }
         } catch (error) {
-          console.error("Error fetching blockchain data:", error);
-          // Không block UI nếu blockchain fail
+          console.warn(
+            "Blockchain data not available (expected for seed data):",
+            error.message
+          );
+          // Không throw error để page vẫn render được với data từ DB
         }
       } else {
         message.error("Không tìm thấy quỹ");
@@ -56,6 +90,28 @@ const FundDetail = () => {
       navigate("/funds");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
+      message.error("Vui lòng nhập số tiền hợp lệ");
+      return;
+    }
+
+    try {
+      setWithdrawLoading(true);
+      await withdrawFunds(fund.fundId, withdrawAmount.toString());
+      message.success("Rút tiền thành công!");
+      setWithdrawModalVisible(false);
+      setWithdrawAmount("");
+      // Refresh data
+      fetchFundDetail();
+    } catch (error) {
+      console.error("Withdraw error:", error);
+      message.error("Rút tiền thất bại. Vui lòng kiểm tra lại.");
+    } finally {
+      setWithdrawLoading(false);
     }
   };
 
@@ -87,27 +143,45 @@ const FundDetail = () => {
             padding: "0 20px",
           }}
         >
-          <Breadcrumb
-            items={[
-              {
-                title: (
-                  <Link to="/" style={{ color: "#1677ff" }}>
-                    <HomeOutlined /> Trang chủ
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link to="/funds" style={{ color: "#1677ff" }}>
-                    Danh sách quỹ
-                  </Link>
-                ),
-              },
-              {
-                title: fund.title || "Chi tiết quỹ",
-              },
-            ]}
-          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Breadcrumb
+              items={[
+                {
+                  title: (
+                    <Link to="/" style={{ color: "#1677ff" }}>
+                      <HomeOutlined /> Trang chủ
+                    </Link>
+                  ),
+                },
+                {
+                  title: (
+                    <Link to="/funds" style={{ color: "#1677ff" }}>
+                      Danh sách quỹ
+                    </Link>
+                  ),
+                },
+                {
+                  title: fund.title || "Chi tiết quỹ",
+                },
+              ]}
+            />
+            {isOwner && (
+              <Button
+                type="primary"
+                danger
+                icon={<WalletOutlined />}
+                onClick={() => setWithdrawModalVisible(true)}
+              >
+                Rút tiền về ví
+              </Button>
+            )}
+          </div>
 
           <Title
             level={3}
@@ -137,6 +211,30 @@ const FundDetail = () => {
           <FundOtherCampaigns currentFundId={id} />
         </div>
       </div>
+
+      <Modal
+        title="Rút tiền từ quỹ"
+        open={withdrawModalVisible}
+        onOk={handleWithdraw}
+        onCancel={() => setWithdrawModalVisible(false)}
+        confirmLoading={withdrawLoading}
+        okText="Rút tiền"
+        cancelText="Hủy"
+      >
+        <p>Nhập số lượng ETH muốn rút về ví của bạn:</p>
+        <InputNumber
+          style={{ width: "100%" }}
+          min="0"
+          step="0.01"
+          value={withdrawAmount}
+          onChange={(value) => setWithdrawAmount(value)}
+          addonAfter="ETH"
+        />
+        <p style={{ marginTop: 10, color: "#888", fontSize: 12 }}>
+          * Lưu ý: Bạn chỉ có thể rút số tiền nhỏ hơn hoặc bằng số dư hiện tại
+          của quỹ.
+        </p>
+      </Modal>
 
       <FooterSection />
     </>

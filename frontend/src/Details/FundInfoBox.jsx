@@ -16,14 +16,14 @@ const FundInfoBox = ({ fund, blockchainData }) => {
 
   const goal = fund.goal || 100000000;
   // Ưu tiên lấy totalReceived từ blockchain nếu có, không thì lấy từ DB
-  const raised = blockchainData 
+  const raised = blockchainData
     ? parseFloat(blockchainData.totalReceived) * 1e18 // Convert ETH to Wei/Unit if needed, but here assuming VND for simplicity or need conversion logic
     : parseFloat(fund.totalReceived || 0);
 
-  // Lưu ý: Ở đây đang giả định đơn vị tiền tệ là VND. 
+  // Lưu ý: Ở đây đang giả định đơn vị tiền tệ là VND.
   // Nếu blockchain trả về ETH, cần convert hoặc hiển thị ETH.
   // Để đơn giản cho demo, ta hiển thị số raw hoặc format lại sau.
-  
+
   // Tính ngày còn lại
   const endDate = fund.endDate ? new Date(fund.endDate) : new Date();
   const today = new Date();
@@ -33,7 +33,8 @@ const FundInfoBox = ({ fund, blockchainData }) => {
   const percent = goal > 0 ? ((raised / goal) * 100).toFixed(1) : 0;
 
   // Thông tin người tạo
-  const creatorName = fund.creatorInfo?.organization || fund.creatorInfo?.name || "Người gây quỹ";
+  const creatorName =
+    fund.creatorInfo?.organization || fund.creatorInfo?.name || "Người gây quỹ";
 
   return (
     <Card
@@ -46,19 +47,21 @@ const FundInfoBox = ({ fund, blockchainData }) => {
     >
       <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
         <div style={{ marginRight: 12 }}>
-           {/* Placeholder avatar nếu không có logo */}
-           <div style={{ 
-             width: 60, 
-             height: 60, 
-             borderRadius: "50%", 
-             backgroundColor: "#f0f0f0",
-             display: "flex",
-             alignItems: "center",
-             justifyContent: "center",
-             fontSize: 24
-           }}>
-             {creatorName.charAt(0).toUpperCase()}
-           </div>
+          {/* Placeholder avatar nếu không có logo */}
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: "50%",
+              backgroundColor: "#f0f0f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 24,
+            }}
+          >
+            {creatorName.charAt(0).toUpperCase()}
+          </div>
         </div>
         <div>
           <Text strong style={{ fontSize: 20 }}>
@@ -139,36 +142,38 @@ const FundInfoBox = ({ fund, blockchainData }) => {
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundPosition = "left center";
         }}
-        onClick={() => navigate("/donate")} 
+        onClick={() => navigate(`/donate/${fund.fundId}`)}
       >
         Ủng hộ
       </Button>
 
       <div style={{ textAlign: "center" }}>
         {fund.qrCode ? (
-             <img
-             src={fund.qrCode}
-             alt="QR Code"
-             width={230}
-             height={230}
-             style={{ borderRadius: "12px" }}
-           />
+          <img
+            src={fund.qrCode}
+            alt="QR Code"
+            width={230}
+            height={230}
+            style={{ borderRadius: "12px" }}
+          />
         ) : (
-            <div style={{ 
-                width: 230, 
-                height: 230, 
-                margin: "0 auto", 
-                backgroundColor: "#f5f5f5", 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                borderRadius: "12px",
-                color: "#999"
-            }}>
-                Chưa có mã QR
-            </div>
+          <div
+            style={{
+              width: 230,
+              height: 230,
+              margin: "0 auto",
+              backgroundColor: "#f5f5f5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "12px",
+              color: "#999",
+            }}
+          >
+            Chưa có mã QR
+          </div>
         )}
-       
+
         <p
           style={{
             marginTop: 8,

@@ -11,46 +11,84 @@ import {
   Button,
   Avatar,
   Checkbox,
+  Spin,
+  message,
 } from "antd";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FooterSection from "../components/FooterSection";
 import WalletConnect from "../components/WalletConnect";
 import {
   handleDonation,
   getCurrentEthPrice,
+  getFundInfo,
 } from "../services/Web3Service";
+import { fundAPI } from "../services/api";
 
 const { Title, Text } = Typography;
 
 const DonatePage = () => {
-  const [raisedAmount, setRaisedAmount] = useState(50000000);
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [form] = Form.useForm();
+
+  const [fund, setFund] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [raisedAmount, setRaisedAmount] = useState(0);
+  const [goalAmount, setGoalAmount] = useState(0);
+
   const [anonymous, setAnonymous] = useState(false);
   const [thankMessage, setThankMessage] = useState("");
   const [walletAccount, setWalletAccount] = useState(null);
   const [walletError, setWalletError] = useState(null);
   const [ethPrice, setEthPrice] = useState(0);
-  useEffect(() => {
-    const fetchPrice = async () => {
-      const price = await getCurrentEthPrice();
-      setEthPrice(price);
-    };
-    fetchPrice();
-  }, []);
-  const fundInfo = {
-    organization: "Hội chữ thập đỏ Việt Nam",
-    logo: "https://i.pinimg.com/736x/a4/0b/05/a40b050278d6c4ba8f9f959100722ad8.jpg",
-    coverImage:
-      "https://i.pinimg.com/736x/11/38/8b/11388b2d0d07b266ff21062c8b01a519.jpg",
-    fundName: "Quỹ Vì Miền Trung",
-    goal: 100000000,
-    daysLeft: 10,
-  };
 
-  const progressPercent = Math.min(
-    Math.round((raisedAmount / fundInfo.goal) * 100),
-    100
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // 1. Get ETH Price
+        const price = await getCurrentEthPrice();
+        setEthPrice(price);
+
+        // 2. Get Fund Details from Backend
+        const response = await fundAPI.getById(id);
+        if (response.data.success) {
+          const fundData = response.data.fund;
+          setFund(fundData);
+          setGoalAmount(fundData.goal || 100000000);
+
+          // 3. Get Blockchain Data (for latest raised amount)
+          try {
+            const blockchainInfo = await getFundInfo(fundData.fundId);
+            // Convert ETH to VND roughly for display if needed, or just use what we have.
+            // Here we assume blockchain returns ETH, but for consistency with previous UI,
+            // we might want to stick to what backend says or just display ETH.
+            // However, the UI expects VND. Let's use the backend's totalReceived
+            // or calculate from blockchain if we want real-time.
+            // For now, let's trust the backend data initially, or use blockchain data converted.
+            // Let's use backend data for simplicity and consistency with FundDetail.
+            setRaisedAmount(fundData.totalReceived || 0);
+          } catch (bcError) {
+            console.error("Blockchain fetch error:", bcError);
+            setRaisedAmount(fundData.totalReceived || 0);
+          }
+        } else {
+          message.error("Không tìm thấy quỹ!");
+          navigate("/funds");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        message.error("Lỗi tải dữ liệu.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchData();
+    }
+  }, [id, navigate]);
 
   const onFinish = async (values) => {
     if (!walletAccount) {
@@ -66,40 +104,33 @@ const DonatePage = () => {
     try {
       const amountVND = values.amount;
       const amountETH = amountVND / ethPrice;
-      const amountETHString = amountETH.toFixed(18).toString();
-      
+      // Ensure we send a string with 18 decimals max to avoid overflow/underflow issues in parsing
+      const amountETHString = amountETH.toFixed(18);
+
       console.log("Số tiền VND:", amountVND);
       console.log("Tỷ giá ETH:", ethPrice);
       console.log("Số ETH sẽ gửi:", amountETHString);
-      
-      // Lấy fundId từ URL hoặc props (cần update để lấy từ route params)
-      const fundId = 0; // TODO: Get from route params or props
-      
+      console.log("Fund ID (Blockchain):", fund.fundId);
+
       setThankMessage("⏳ Đang xử lý giao dịch trên blockchain...");
-      
-      const receipt = await handleDonation(fundId, amountETHString);
-      
-      // Sync với backend sau khi transaction thành công
-      // Backend sẽ tự động sync qua event listener, nhưng có thể gọi sync endpoint
-      try {
-        // Có thể gọi sync endpoint nếu backend có
-        // await fundAPI.syncDonation({ fundId, txHash: receipt.hash, donor: walletAccount });
-      } catch (syncError) {
-        console.error("Error syncing donation:", syncError);
-        // Không block nếu backend sync fail
-      }
-      
-      setThankMessage(`✅ Quyên góp thành công! Transaction hash: ${receipt.hash.slice(0, 10)}...`);
+
+      const receipt = await handleDonation(fund.fundId, amountETHString);
+
+      // Sync logic here if needed (backend usually listens to events)
+
+      setThankMessage(
+        `✅ Quyên góp thành công! Transaction hash: ${receipt.hash.slice(
+          0,
+          10
+        )}...`
+      );
       form.resetFields();
-      
-      // Refresh fund info after donation
-      setTimeout(() => {
-        setRaisedAmount(prev => prev + amountVND);
-      }, 2000);
-      
+
+      // Update local state to reflect donation immediately (optional)
+      setRaisedAmount((prev) => prev + amountVND);
     } catch (error) {
       console.error("Lỗi giao dịch:", error);
-      
+
       let errorMsg = "Không thể thực hiện quyên góp. ";
       if (error.message?.includes("user rejected")) {
         errorMsg += "Bạn đã hủy giao dịch.";
@@ -110,10 +141,43 @@ const DonatePage = () => {
       } else {
         errorMsg += error.message || "Vui lòng thử lại sau.";
       }
-      
+
       setThankMessage(`🚨 ${errorMsg}`);
     }
   };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ textAlign: "center", padding: "100px 0" }}>
+          <Spin size="large" />
+        </div>
+        <FooterSection />
+      </>
+    );
+  }
+
+  if (!fund) return null;
+
+  // Calculate days left
+  const endDate = fund.endDate ? new Date(fund.endDate) : new Date();
+  const today = new Date();
+  const timeDiff = endDate.getTime() - today.getTime();
+  const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+  const progressPercent = Math.min(
+    Math.round((raisedAmount / goalAmount) * 100),
+    100
+  );
+
+  // Image handling
+  const coverImage =
+    fund.images?.main || "https://via.placeholder.com/800x400?text=No+Image";
+  const logo = fund.images?.logo || "https://via.placeholder.com/100?text=Logo";
+  const organization =
+    fund.creator?.organization || fund.creator?.name || "Tổ chức từ thiện";
+
   return (
     <>
       <Navbar />
@@ -124,29 +188,37 @@ const DonatePage = () => {
             maxWidth: "1400px",
             margin: "16px auto",
             padding: "12px",
-            backgroundColor: "#d4edda",
-            color: "#155724",
+            backgroundColor:
+              walletError || thankMessage.includes("🚨")
+                ? "#f8d7da"
+                : "#d4edda",
+            color:
+              walletError || thankMessage.includes("🚨")
+                ? "#721c24"
+                : "#155724",
             fontWeight: "bold",
             textAlign: "center",
             borderRadius: "8px",
             fontSize: "16px",
           }}
         >
-          {walletError ? `🚨 Lỗi kết nối: ${walletError}` : thankMessage} {/* <--- Ưu tiên hiển thị lỗi ví */}
-          {thankMessage}
+          {walletError ? `🚨 Lỗi kết nối: ${walletError}` : thankMessage}
         </div>
       )}
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px" }}>
         <div style={{ marginBottom: "24px", textAlign: "right" }}>
-          <WalletConnect setAccount={setWalletAccount} setError={setWalletError} />
+          <WalletConnect
+            setAccount={setWalletAccount}
+            setError={setWalletError}
+          />
         </div>
         <Row gutter={[24, 24]}>
           <Col xs={24} md={12}>
             <Card style={{ padding: "20px" }}>
               <Row align="middle" gutter={16}>
                 <Col>
-                  <Avatar size={64} src={fundInfo.logo} />
+                  <Avatar size={64} src={logo} />
                 </Col>
                 <Col>
                   <div
@@ -161,7 +233,7 @@ const DonatePage = () => {
                       Tiền ủng hộ được chuyển đến
                     </Text>
                     <Title level={4} style={{ margin: 0, fontSize: "20px" }}>
-                      {fundInfo.organization}
+                      {organization}
                     </Title>
                   </div>
                 </Col>
@@ -180,19 +252,15 @@ const DonatePage = () => {
                   alignItems: "center",
                 }}
               >
-                {fundInfo.coverImage ? (
-                  <img
-                    src={fundInfo.coverImage}
-                    alt="Hình đại diện quỹ"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <Text type="secondary">Chưa có hình ảnh</Text>
-                )}
+                <img
+                  src={coverImage}
+                  alt="Hình đại diện quỹ"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
 
                 <div
                   style={{
@@ -207,17 +275,17 @@ const DonatePage = () => {
                     fontWeight: 500,
                   }}
                 >
-                  {fundInfo.daysLeft} ngày còn lại
+                  {daysLeft > 0 ? `${daysLeft} ngày còn lại` : "Đã kết thúc"}
                 </div>
               </div>
               <Title level={4} style={{ marginTop: "16px", fontSize: "22px" }}>
-                {fundInfo.fundName}
+                {fund.title}
               </Title>
               <Text strong style={{ fontSize: "16px" }}>
                 Mục tiêu quỹ:
               </Text>{" "}
               <Text style={{ fontSize: "16px" }}>
-                {fundInfo.goal.toLocaleString()} VND
+                {goalAmount.toLocaleString()} VND
               </Text>
               <div
                 style={{
@@ -263,7 +331,7 @@ const DonatePage = () => {
                 <Form.Item
                   label={
                     <span style={{ fontSize: "16px", fontWeight: 500 }}>
-                      Số tiền ủng hộ
+                      Số tiền ủng hộ (VND)
                     </span>
                   }
                   name="amount"
@@ -276,7 +344,7 @@ const DonatePage = () => {
                     style={{
                       width: "100%",
                       fontSize: "20px",
-                      height: "20px",
+                      height: "40px",
                       textAlign: "right",
                       color: "#155724",
                       fontWeight: "bold",
@@ -295,6 +363,11 @@ const DonatePage = () => {
                     }
                   />
                 </Form.Item>
+
+                <div style={{ marginBottom: 10, color: "#888", fontSize: 13 }}>
+                  Tỷ giá quy đổi ước tính: 1 ETH ≈ {ethPrice.toLocaleString()}{" "}
+                  VND
+                </div>
 
                 <div
                   style={{

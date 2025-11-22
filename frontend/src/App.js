@@ -24,10 +24,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/funds" element={<FundList />} /> 
+        <Route path="/funds" element={<FundList />} />
         <Route path="/funds/:id" element={<FundDetail />} />
         <Route path="/saoke-quy" element={<SaoKeQuy />} />
-        <Route path="/donate" element={<DonatePage />} />
+        <Route path="/donate/:id" element={<DonatePage />} />
         <Route path="/tao-quy-moi" element={<TaoQuyMoi />} />
         <Route path="/gioi-thieu-quy" element={<GioiThieuQuy />} />
         <Route path="/dieu-khoan" element={<DieuKhoan />} />
