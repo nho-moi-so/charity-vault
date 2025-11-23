@@ -13,10 +13,14 @@ import {
   fetchUserProfile,
   updateUserProfile,
 } from "../services/authService";
+import { donationAPI } from "../services/api";
+import { weiToVND } from "../utils/currencyHelper";
+import { getCurrentEthPrice } from "../services/Web3Service";
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalDonated: 0, totalFunds: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,6 +43,34 @@ const ProfilePage = () => {
 
         const profile = await fetchUserProfile(address);
         setUser(profile);
+
+        // Fetch donation stats
+        try {
+          const ethPrice = await getCurrentEthPrice();
+          // Fetch with large limit to calculate stats
+          const donationRes = await donationAPI.getUserHistory(address, {
+            limit: 1000,
+          });
+
+          if (donationRes.data.success) {
+            const donations = donationRes.data.donations;
+
+            // Calculate total donated in VND
+            const totalDonatedVND = donations.reduce((sum, d) => {
+              return sum + weiToVND(d.amount, ethPrice);
+            }, 0);
+
+            // Calculate unique funds
+            const uniqueFunds = new Set(donations.map((d) => d.fundId)).size;
+
+            setStats({
+              totalDonated: totalDonatedVND,
+              totalFunds: uniqueFunds,
+            });
+          }
+        } catch (err) {
+          console.error("Error calculating stats:", err);
+        }
       } catch (error) {
         console.error("Load profile error:", error);
         message.error(error.message || "Không thể tải thông tin hồ sơ.");
@@ -84,13 +116,15 @@ const ProfilePage = () => {
     <div>
       <Navbar />
       <CoverSection user={user} onProfileUpdate={handleProfileUpdate} />
-      <div style={{ maxWidth: 1500, margin: "0 auto", padding: "10px 20px 40px" }}>
+      <div
+        style={{ maxWidth: 1500, margin: "0 auto", padding: "10px 20px 40px" }}
+      >
         <Row gutter={20}>
           <Col span={8}>
             <Infor user={user} onProfileUpdate={handleProfileUpdate} />
           </Col>
           <Col span={16}>
-            <Thongke user={user} />
+            <Thongke user={user} stats={stats} />
             <Lichsugiaodich />
           </Col>
         </Row>

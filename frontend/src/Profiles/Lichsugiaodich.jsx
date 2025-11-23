@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Table, Card, Pagination, Tooltip, Spin, message } from "antd";
 import { donationAPI } from "../services/api";
 import { getStoredUser } from "../services/authService";
+import { weiToVND } from "../utils/currencyHelper";
 
 const Lichsugiaodich = () => {
   const [transactions, setTransactions] = useState([]);
@@ -19,7 +20,7 @@ const Lichsugiaodich = () => {
         setLoading(true);
         const response = await donationAPI.getUserHistory(user.address, {
           page: currentPage,
-          limit: pageSize
+          limit: pageSize,
         });
 
         if (response.data?.success) {
@@ -40,57 +41,67 @@ const Lichsugiaodich = () => {
   const handleChange = (page) => setCurrentPage(page);
 
   const columns = [
-    { 
-      title: "Mã giao dịch", 
-      dataIndex: "transactionHash", 
-      key: "transactionHash", 
-      align: "center", 
-      width: 150, 
+    {
+      title: "Mã giao dịch",
+      dataIndex: "transactionHash",
+      key: "transactionHash",
+      align: "center",
+      width: 150,
       render: (text) => (
         <Tooltip title={text}>
           <span style={{ fontSize: 12 }}>
-            {text ? `${text.substring(0, 6)}...${text.substring(text.length - 4)}` : "N/A"}
+            {text
+              ? `${text.substring(0, 6)}...${text.substring(text.length - 4)}`
+              : "N/A"}
           </span>
         </Tooltip>
-      )
+      ),
     },
-    { 
-      title: "Thời gian", 
-      dataIndex: "timestamp", 
-      key: "timestamp", 
-      align: "center", 
+    {
+      title: "Thời gian",
+      dataIndex: "timestamp",
+      key: "timestamp",
+      align: "center",
       width: 150,
-      render: (text) => <span style={{ fontSize: 12 }}>{new Date(text).toLocaleString()}</span>
+      render: (text) => (
+        <span style={{ fontSize: 12 }}>{new Date(text).toLocaleString()}</span>
+      ),
     },
-    { 
-      title: "Quỹ", 
-      dataIndex: "fundTitle", 
-      key: "fundTitle", 
-      align: "center", 
+    {
+      title: "Quỹ",
+      dataIndex: "fundTitle",
+      key: "fundTitle",
+      align: "center",
       width: 200,
       render: (text, record) => (
         <Tooltip title={`Fund ID: ${record.fundId}`}>
-          <span style={{ fontSize: 12 }}>{text || `Fund #${record.fundId}`}</span>
+          <span style={{ fontSize: 12 }}>
+            {text || `Fund #${record.fundId}`}
+          </span>
         </Tooltip>
-      )
+      ),
     },
-    { 
-      title: "Số tiền", 
-      dataIndex: "amount", 
-      key: "amount", 
+    {
+      title: "Số tiền",
+      dataIndex: "amount",
+      key: "amount",
       align: "center",
       width: 160,
       render: (amount) => (
         <span style={{ color: "#52c41a", fontWeight: "bold", fontSize: 12 }}>
-          +{parseFloat(amount).toLocaleString()} ETH
+          +{weiToVND(amount).toLocaleString("vi-VN")} VNĐ
         </span>
-      )
+      ),
     },
   ];
 
   return (
     <Card
-      title={<div style={{ textAlign: "center", fontWeight: "bold" }}>Lịch sử giao dịch của tôi</div>}
+      title={
+        <div style={{ textAlign: "center", fontWeight: "bold" }}>
+          Lịch sử giao dịch của tôi
+        </div>
+      }
       style={{ marginTop: 20 }}
       bodyStyle={{ padding: 0 }}
     >
@@ -110,7 +121,13 @@ const Lichsugiaodich = () => {
               style={{ tableLayout: "fixed", fontSize: 12 }}
               locale={{ emptyText: "Chưa có giao dịch nào" }}
             />
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 10,
+              }}
+            >
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}

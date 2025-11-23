@@ -222,6 +222,16 @@ const FundDetail = () => {
         cancelText="Hủy"
       >
         <p>Nhập số lượng ETH muốn rút về ví của bạn:</p>
+        {blockchainData && (
+          <p style={{ marginBottom: 10, fontWeight: 500 }}>
+            Số dư hiện tại:{" "}
+            <span style={{ color: "#117529" }}>
+              {parseFloat(blockchainData.totalReceived) -
+                parseFloat(blockchainData.totalWithdrawn)}{" "}
+              ETH
+            </span>
+          </p>
+        )}
         <InputNumber
           style={{ width: "100%" }}
           min="0"

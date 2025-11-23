@@ -2,9 +2,10 @@ import React from "react";
 import { Row, Col } from "antd";
 import { DollarOutlined, FundOutlined } from "@ant-design/icons";
 
-const Thongke = ({ user }) => {
-  const totalDonated = Number(user.totalDonated || 0);
-  const totalFunds = user.totalFundsCreated ?? user.totalFunds ?? 0;
+const Thongke = ({ user, stats }) => {
+  const totalDonated = stats?.totalDonated || Number(user.totalDonated || 0);
+  const totalFunds =
+    stats?.totalFunds || user.totalFundsCreated || user.totalFunds || 0;
 
   const cardStyle = {
     background: "rgba(255,255,255,0.8)",
@@ -22,17 +23,18 @@ const Thongke = ({ user }) => {
     marginBottom: 10,
   };
 
-  const numberStyle = { 
-    fontSize: 24, 
-    color: "red", 
-    fontWeight: "bold", 
-    marginTop: 10 
+  const numberStyle = {
+    fontSize: 24,
+    color: "red",
+    fontWeight: "bold",
+    marginTop: 10,
   };
 
   return (
     <div
       style={{
-        backgroundImage: 'url("https://i.pinimg.com/736x/d2/45/e6/d245e6ba6c9dedbd20f78bc2aa43d19b.jpg")',
+        backgroundImage:
+          'url("https://i.pinimg.com/736x/d2/45/e6/d245e6ba6c9dedbd20f78bc2aa43d19b.jpg")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         padding: "40px 20px",
@@ -44,7 +46,9 @@ const Thongke = ({ user }) => {
           <div style={cardStyle}>
             <div style={topStyle}>
               <DollarOutlined style={{ fontSize: 40, color: "#52c41a" }} />
-              <span style={{ fontWeight: "bold", fontSize: 16 }}>Tổng tiền đã ủng hộ</span>
+              <span style={{ fontWeight: "bold", fontSize: 16 }}>
+                Tổng tiền đã ủng hộ
+              </span>
             </div>
             <div style={numberStyle}>{totalDonated.toLocaleString()} VNĐ</div>
           </div>
@@ -53,7 +57,9 @@ const Thongke = ({ user }) => {
           <div style={cardStyle}>
             <div style={topStyle}>
               <FundOutlined style={{ fontSize: 40, color: "#1890ff" }} />
-              <span style={{ fontWeight: "bold", fontSize: 16 }}>Tổng số quỹ đã tham gia</span>
+              <span style={{ fontWeight: "bold", fontSize: 16 }}>
+                Tổng số quỹ đã tham gia
+              </span>
             </div>
             <div style={numberStyle}>{totalFunds}</div>
           </div>
