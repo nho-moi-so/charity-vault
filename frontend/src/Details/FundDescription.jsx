@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Typography, Table, Divider, Tabs, Pagination, Spin } from "antd";
 import { HeartFilled, InfoCircleOutlined } from "@ant-design/icons";
 import { donationAPI } from "../services/api";
+import { weiToVND } from "../utils/currencyHelper";
+import { getCurrentEthPrice } from "../services/Web3Service";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -10,7 +12,21 @@ const FundDescription = ({ fund }) => {
   const [loadingDonors, setLoadingDonors] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalDonors, setTotalDonors] = useState(0);
+  const [ethPrice, setEthPrice] = useState(80000000);
   const pageSize = 10;
+
+  // Fetch ETH price
+  useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        const price = await getCurrentEthPrice();
+        setEthPrice(price);
+      } catch (error) {
+        console.error("Error fetching ETH price:", error);
+      }
+    };
+    fetchEthPrice();
+  }, []);
 
   useEffect(() => {
     if (fund?.fundId) {
@@ -23,7 +39,7 @@ const FundDescription = ({ fund }) => {
       setLoadingDonors(true);
       const response = await donationAPI.getFundHistory(fund.fundId, {
         page: currentPage,
-        limit: pageSize
+        limit: pageSize,
       });
       if (response.data.success) {
         setDonors(response.data.donations);
@@ -41,25 +57,35 @@ const FundDescription = ({ fund }) => {
       title: <b>Tên người ủng hộ</b>,
       dataIndex: "donor", // Dùng address nếu không có tên
       key: "donor",
-      render: (text) => <Text strong>{text.slice(0, 6)}...{text.slice(-4)}</Text>,
+      render: (text) => (
+        <Text strong>
+          {text.slice(0, 6)}...{text.slice(-4)}
+        </Text>
+      ),
     },
     {
       title: <b>Số tiền</b>,
       dataIndex: "amount",
       key: "amount",
       align: "center",
-      render: (amount) => (
-        <Text style={{ color: "#52c41a", fontWeight: 600 }}>
-          +{parseFloat(amount).toLocaleString("vi-VN")} ETH
-        </Text>
-      ),
+      render: (amount) => {
+        // Convert Wei to VND
+        const amountVND = weiToVND(amount, ethPrice);
+        return (
+          <Text style={{ color: "#52c41a", fontWeight: 600 }}>
+            +{amountVND.toLocaleString("vi-VN")} VND
+          </Text>
+        );
+      },
     },
     {
       title: <b>Thời gian</b>,
       dataIndex: "timestamp",
       key: "timestamp",
       align: "center",
-      render: (time) => <Text type="secondary">{new Date(time).toLocaleString()}</Text>,
+      render: (time) => (
+        <Text type="secondary">{new Date(time).toLocaleString()}</Text>
+      ),
     },
   ];
 
@@ -100,9 +126,16 @@ const FundDescription = ({ fund }) => {
                   🌿 Giới thiệu về chiến dịch
                 </Title>
                 <Paragraph
-                  style={{ fontSize: "16px", lineHeight: "1.8", color: "#444", whiteSpace: "pre-line" }}
+                  style={{
+                    fontSize: "16px",
+                    lineHeight: "1.8",
+                    color: "#444",
+                    whiteSpace: "pre-line",
+                  }}
                 >
-                  {fund.fullDescription || fund.description || "Chưa có mô tả chi tiết cho quỹ này."}
+                  {fund.fullDescription ||
+                    fund.description ||
+                    "Chưa có mô tả chi tiết cho quỹ này."}
                 </Paragraph>
               </div>
             ),
@@ -122,34 +155,36 @@ const FundDescription = ({ fund }) => {
                 <Divider style={{ margin: "12px 0" }} />
 
                 {loadingDonors ? (
-                    <div style={{ textAlign: "center", padding: 20 }}><Spin /></div>
+                  <div style={{ textAlign: "center", padding: 20 }}>
+                    <Spin />
+                  </div>
                 ) : (
-                    <>
-                        <Table
-                        dataSource={donors}
-                        columns={columns}
-                        pagination={false}
-                        bordered={false}
-                        style={{ borderRadius: "12px" }}
-                        rowKey="_id"
-                        />
+                  <>
+                    <Table
+                      dataSource={donors}
+                      columns={columns}
+                      pagination={false}
+                      bordered={false}
+                      style={{ borderRadius: "12px" }}
+                      rowKey="_id"
+                    />
 
-                        <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            marginTop: 24,
-                        }}
-                        >
-                        <Pagination
-                            current={currentPage}
-                            pageSize={pageSize}
-                            total={totalDonors}
-                            onChange={(page) => setCurrentPage(page)}
-                            showSizeChanger={false}
-                        />
-                        </div>
-                    </>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginTop: 24,
+                      }}
+                    >
+                      <Pagination
+                        current={currentPage}
+                        pageSize={pageSize}
+                        total={totalDonors}
+                        onChange={(page) => setCurrentPage(page)}
+                        showSizeChanger={false}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             ),

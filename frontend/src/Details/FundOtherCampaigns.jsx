@@ -7,14 +7,30 @@ import {
   PictureOutlined,
   RightOutlined,
 } from "@ant-design/icons";
+import { weiToVND, isLikelyWei } from "../utils/currencyHelper";
+import { getCurrentEthPrice } from "../services/Web3Service";
 
 const { Title, Text } = Typography;
 
 const FundOtherCampaigns = ({ currentFundId }) => {
   const [campaigns, setCampaigns] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
+  const [ethPrice, setEthPrice] = useState(80000000); // Default ETH price
   const visibleCards = 3;
   const navigate = useNavigate();
+
+  // Fetch ETH price
+  useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        const price = await getCurrentEthPrice();
+        setEthPrice(price);
+      } catch (error) {
+        console.error("Error fetching ETH price:", error);
+      }
+    };
+    fetchEthPrice();
+  }, []);
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -98,7 +114,17 @@ const FundOtherCampaigns = ({ currentFundId }) => {
         <Row gutter={[24, 24]} style={{ flex: 1 }}>
           {visibleCampaigns.map((item) => {
             const goal = item.goal || 1;
-            const donated = item.totalReceived || 0;
+
+            // Convert donated amount from Wei to VND if needed
+            let donated = 0;
+            if (item.totalReceived) {
+              if (isLikelyWei(item.totalReceived)) {
+                donated = weiToVND(item.totalReceived, ethPrice);
+              } else {
+                donated = parseFloat(item.totalReceived);
+              }
+            }
+
             const percent = Math.min((donated / goal) * 100, 100);
 
             // Tính ngày còn lại

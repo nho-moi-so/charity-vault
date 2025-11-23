@@ -3,13 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { Progress, Spin } from "antd";
 import { fundAPI } from "../services/api";
+import { weiToVND, isLikelyWei } from "../utils/currencyHelper";
+import { getCurrentEthPrice } from "../services/Web3Service";
 
 const FeaturedCampaigns = () => {
   const [startIndex, setStartIndex] = useState(0);
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ethPrice, setEthPrice] = useState(80000000); // Default ETH price
   const navigate = useNavigate();
   const visibleCount = 3;
+
+  // Fetch ETH price
+  useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        const price = await getCurrentEthPrice();
+        setEthPrice(price);
+      } catch (error) {
+        console.error("Error fetching ETH price:", error);
+      }
+    };
+    fetchEthPrice();
+  }, []);
 
   useEffect(() => {
     fetchFeaturedCampaigns();
@@ -20,18 +36,31 @@ const FeaturedCampaigns = () => {
       setLoading(true);
       // Lấy top 5 quỹ mới nhất hoặc có số tiền quyên góp cao nhất
       const response = await fundAPI.getAll({ page: 1, limit: 5 });
-      
+
       if (response.data.success) {
-        const mappedCampaigns = response.data.funds.map((fund) => ({
-          id: fund.fundId,
-          title: fund.title,
-          description: fund.metadataURI || "Quỹ từ thiện ý nghĩa",
-          image: "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
-          daysLeft: 30, // Default, backend chưa có
-          goal: 100000000, // Default goal
-          donated: parseFloat(fund.totalReceived || 0),
-        }));
-        
+        const mappedCampaigns = response.data.funds.map((fund) => {
+          // Convert donated amount from Wei to VND if needed
+          let donatedAmount = 0;
+          if (fund.totalReceived) {
+            if (isLikelyWei(fund.totalReceived)) {
+              donatedAmount = weiToVND(fund.totalReceived, ethPrice);
+            } else {
+              donatedAmount = parseFloat(fund.totalReceived);
+            }
+          }
+
+          return {
+            id: fund.fundId,
+            title: fund.title,
+            description: fund.metadataURI || "Quỹ từ thiện ý nghĩa",
+            image:
+              "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
+            daysLeft: 30, // Default, backend chưa có
+            goal: 100000000, // Default goal
+            donated: donatedAmount,
+          };
+        });
+
         setCampaigns(mappedCampaigns);
       }
     } catch (error) {
@@ -78,7 +107,10 @@ const FeaturedCampaigns = () => {
   const visibleItems = campaigns.slice(startIndex, startIndex + visibleCount);
   const itemsToDisplay =
     visibleItems.length < visibleCount
-      ? [...visibleItems, ...campaigns.slice(0, visibleCount - visibleItems.length)]
+      ? [
+          ...visibleItems,
+          ...campaigns.slice(0, visibleCount - visibleItems.length),
+        ]
       : visibleItems;
 
   return (

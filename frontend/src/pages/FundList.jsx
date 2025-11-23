@@ -17,6 +17,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FooterSection from "../components/FooterSection";
 import { fundAPI } from "../services/api";
+import { weiToVND, isLikelyWei } from "../utils/currencyHelper";
+import { getCurrentEthPrice } from "../services/Web3Service";
 
 const { Search } = Input;
 
@@ -36,7 +38,21 @@ const FundList = () => {
   const [loading, setLoading] = useState(true);
   const [funds, setFunds] = useState([]);
   const [totalFunds, setTotalFunds] = useState(0);
+  const [ethPrice, setEthPrice] = useState(80000000); // Default ETH price
   const pageSize = 9;
+
+  // Fetch ETH price
+  useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        const price = await getCurrentEthPrice();
+        setEthPrice(price);
+      } catch (error) {
+        console.error("Error fetching ETH price:", error);
+      }
+    };
+    fetchEthPrice();
+  }, []);
 
   useEffect(() => {
     setFilterCategory(categoryFromQuery || "all");
@@ -75,13 +91,28 @@ const FundList = () => {
           const timeDiff = endDate.getTime() - today.getTime();
           const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
+          // Convert totalReceived from Wei to VND if needed
+          let raisedAmount = 0;
+          if (fund.totalReceived) {
+            if (isLikelyWei(fund.totalReceived)) {
+              raisedAmount = weiToVND(fund.totalReceived, ethPrice);
+            } else {
+              raisedAmount = parseFloat(fund.totalReceived);
+            }
+          }
+
           return {
             id: fund.fundId,
             title: fund.title,
             status: daysLeft > 0 ? "ongoing" : "finished",
-            category: fund.category && fund.category.length > 0 ? fund.category[0] : "Khác",
-            image: fund.images?.main || "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
-            raised: parseFloat(fund.totalReceived || 0),
+            category:
+              fund.category && fund.category.length > 0
+                ? fund.category[0]
+                : "Khác",
+            image:
+              fund.images?.main ||
+              "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
+            raised: raisedAmount,
             goal: fund.goal || 100000000, // Fallback nếu không có goal
             donors: 0, // Tạm thời chưa có số lượng donors trong API list
             daysLeft: daysLeft > 0 ? daysLeft : 0,

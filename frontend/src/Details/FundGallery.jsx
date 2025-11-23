@@ -7,11 +7,19 @@ const FundGallery = ({ fund }) => {
   // Tạo danh sách ảnh từ dữ liệu quỹ
   const images = [];
 
-  if (fund?.image) {
+  // Ưu tiên lấy từ fund.images.main (cấu trúc mới)
+  if (fund?.images?.main) {
+    images.push(fund.images.main);
+  } else if (fund?.image) {
+    // Fallback cho dữ liệu cũ
     images.push(fund.image);
   }
 
-  if (fund?.thumbnails && Array.isArray(fund.thumbnails)) {
+  // Lấy thumbnails từ fund.images.thumbnails (cấu trúc mới)
+  if (fund?.images?.thumbnails && Array.isArray(fund.images.thumbnails)) {
+    images.push(...fund.images.thumbnails);
+  } else if (fund?.thumbnails && Array.isArray(fund.thumbnails)) {
+    // Fallback cho dữ liệu cũ
     images.push(...fund.thumbnails);
   }
 
@@ -19,6 +27,9 @@ const FundGallery = ({ fund }) => {
   if (images.length === 0) {
     images.push("https://via.placeholder.com/800x600?text=No+Image");
   }
+
+  console.log("FundGallery - Fund:", fund);
+  console.log("FundGallery - Images:", images);
 
   const thumbnails = images;
 

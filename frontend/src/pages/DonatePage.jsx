@@ -24,6 +24,7 @@ import {
   getFundInfo,
 } from "../services/Web3Service";
 import { fundAPI } from "../services/api";
+import { weiToVND, isLikelyWei } from "../utils/currencyHelper";
 
 const { Title, Text } = Typography;
 
@@ -61,17 +62,19 @@ const DonatePage = () => {
           // 3. Get Blockchain Data (for latest raised amount)
           try {
             const blockchainInfo = await getFundInfo(fundData.fundId);
-            // Convert ETH to VND roughly for display if needed, or just use what we have.
-            // Here we assume blockchain returns ETH, but for consistency with previous UI,
-            // we might want to stick to what backend says or just display ETH.
-            // However, the UI expects VND. Let's use the backend's totalReceived
-            // or calculate from blockchain if we want real-time.
-            // For now, let's trust the backend data initially, or use blockchain data converted.
-            // Let's use backend data for simplicity and consistency with FundDetail.
-            setRaisedAmount(fundData.totalReceived || 0);
+            // blockchainInfo.totalReceived is in ETH (formatted string)
+            const totalReceivedETH = parseFloat(blockchainInfo.totalReceived);
+            const totalReceivedVND = totalReceivedETH * price;
+            setRaisedAmount(totalReceivedVND);
           } catch (bcError) {
             console.error("Blockchain fetch error:", bcError);
-            setRaisedAmount(fundData.totalReceived || 0);
+            // Fallback to backend data, but convert if it's Wei
+            const backendAmount = fundData.totalReceived || 0;
+            if (isLikelyWei(backendAmount)) {
+              setRaisedAmount(weiToVND(backendAmount, price));
+            } else {
+              setRaisedAmount(backendAmount);
+            }
           }
         } else {
           message.error("Không tìm thấy quỹ!");
@@ -207,7 +210,27 @@ const DonatePage = () => {
       )}
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px" }}>
-        <div style={{ marginBottom: "24px", textAlign: "right" }}>
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Button
+            type="link"
+            onClick={() => navigate(`/funds/${id}`)}
+            style={{
+              fontSize: "16px",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            ← Quay lại trang chi tiết quỹ
+          </Button>
           <WalletConnect
             setAccount={setWalletAccount}
             setError={setWalletError}

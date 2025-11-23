@@ -6,23 +6,45 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { weiToVND, isLikelyWei } from "../utils/currencyHelper";
+import { getCurrentEthPrice } from "../services/Web3Service";
 
 const { Text } = Typography;
 
 const FundInfoBox = ({ fund, blockchainData }) => {
   const navigate = useNavigate();
+  const [ethPrice, setEthPrice] = React.useState(80000000); // Default ETH price
+
+  React.useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        const price = await getCurrentEthPrice();
+        setEthPrice(price);
+      } catch (error) {
+        console.error("Error fetching ETH price:", error);
+      }
+    };
+    fetchEthPrice();
+  }, []);
 
   if (!fund) return null;
 
   const goal = fund.goal || 100000000;
-  // Ưu tiên lấy totalReceived từ blockchain nếu có, không thì lấy từ DB
-  const raised = blockchainData
-    ? parseFloat(blockchainData.totalReceived) * 1e18 // Convert ETH to Wei/Unit if needed, but here assuming VND for simplicity or need conversion logic
-    : parseFloat(fund.totalReceived || 0);
 
-  // Lưu ý: Ở đây đang giả định đơn vị tiền tệ là VND.
-  // Nếu blockchain trả về ETH, cần convert hoặc hiển thị ETH.
-  // Để đơn giản cho demo, ta hiển thị số raw hoặc format lại sau.
+  // Calculate raised amount correctly
+  let raised = 0;
+  if (blockchainData && blockchainData.totalReceived) {
+    // blockchainData.totalReceived is in ETH (formatted string)
+    const totalReceivedETH = parseFloat(blockchainData.totalReceived);
+    raised = totalReceivedETH * ethPrice; // Convert ETH to VND
+  } else if (fund.totalReceived) {
+    // Fallback to DB data, check if it's Wei or VND
+    if (isLikelyWei(fund.totalReceived)) {
+      raised = weiToVND(fund.totalReceived, ethPrice);
+    } else {
+      raised = parseFloat(fund.totalReceived);
+    }
+  }
 
   // Tính ngày còn lại
   const endDate = fund.endDate ? new Date(fund.endDate) : new Date();
@@ -47,28 +69,47 @@ const FundInfoBox = ({ fund, blockchainData }) => {
     >
       <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
         <div style={{ marginRight: 12 }}>
-          {/* Placeholder avatar nếu không có logo */}
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              backgroundColor: "#f0f0f0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 24,
-            }}
-          >
-            {creatorName.charAt(0).toUpperCase()}
-          </div>
+          {/* Logo từ database hoặc placeholder nếu không có */}
+          {fund.images?.logo || fund.logo ? (
+            <img
+              src={fund.images?.logo || fund.logo}
+              alt="Logo"
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid #f0f0f0",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                backgroundColor: "#f0f0f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 24,
+                fontWeight: "bold",
+                color: "#52c41a",
+              }}
+            >
+              {creatorName.charAt(0).toUpperCase()}
+            </div>
+          )}
         </div>
         <div>
           <Text strong style={{ fontSize: 20 }}>
             {creatorName}
           </Text>
           <br />
-          <a href="/saoke-quy" style={{ fontSize: 16, color: "#52c41a" }}>
+          <a
+            href={`/statement/${fund.fundId}`}
+            style={{ fontSize: 16, color: "#52c41a" }}
+          >
             Xem sao kê tài khoản
           </a>
         </div>
@@ -147,7 +188,7 @@ const FundInfoBox = ({ fund, blockchainData }) => {
         Ủng hộ
       </Button>
 
-      <div style={{ textAlign: "center" }}>
+      {/* <div style={{ textAlign: "center" }}>
         {fund.qrCode ? (
           <img
             src={fund.qrCode}
@@ -184,7 +225,7 @@ const FundInfoBox = ({ fund, blockchainData }) => {
         >
           Quét mã QR để ủng hộ nhanh chóng và an toàn 💚
         </p>
-      </div>
+      </div> */}
     </Card>
   );
 };
