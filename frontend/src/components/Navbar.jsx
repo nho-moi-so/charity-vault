@@ -137,9 +137,9 @@ const Navbar = () => {
             style={{ width: 65, cursor: "pointer" }}
             onClick={() => navigate("/")}
           />
-          <Input
+          <Input.Search
             placeholder="Search"
-            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+            onSearch={(value) => navigate(`/funds?search=${value}`)}
             style={{
               width: 350,
               borderRadius: 25,

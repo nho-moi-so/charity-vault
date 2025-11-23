@@ -201,13 +201,26 @@ class FundController {
   // Lấy danh sách quỹ
   async getFunds(req, res) {
     try {
-      const { owner, page = 1, limit = 10 } = req.query;
+      const { owner, search, page = 1, limit = 10 } = req.query;
       const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      console.log("getFunds params:", { owner, search, page, limit });
 
       const query = {};
       if (owner) {
         query.owner = owner.toLowerCase();
       }
+
+      if (search && search.trim()) {
+        const searchRegex = new RegExp(search.trim(), "i");
+        query.$or = [
+          { title: searchRegex },
+          { description: searchRegex },
+          { fullDescription: searchRegex },
+        ];
+      }
+
+      console.log("Final Query:", JSON.stringify(query, null, 2));
 
       const funds = await Fund.find(query)
         .sort({ createdAt: -1 })

@@ -28,12 +28,13 @@ const FundList = () => {
 
   const queryParams = new URLSearchParams(location.search);
   const categoryFromQuery = queryParams.get("category");
+  const searchFromQuery = queryParams.get("search");
 
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState(
     categoryFromQuery || "all"
   );
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState(searchFromQuery || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [funds, setFunds] = useState([]);
@@ -56,8 +57,9 @@ const FundList = () => {
 
   useEffect(() => {
     setFilterCategory(categoryFromQuery || "all");
+    setSearchText(searchFromQuery || "");
     setCurrentPage(1);
-  }, [categoryFromQuery]);
+  }, [categoryFromQuery, searchFromQuery]);
 
   // Fetch funds from API
   useEffect(() => {
@@ -73,8 +75,7 @@ const FundList = () => {
       };
 
       if (searchText) {
-        // Backend có thể cần thêm search endpoint
-        // Tạm thời filter ở frontend
+        params.search = searchText;
       }
 
       const response = await fundAPI.getAll(params);
@@ -135,15 +136,17 @@ const FundList = () => {
     }
   };
 
+  // Backend handles pagination, so we just display the funds we got
+  // But we still filter by status/category on the client side if needed
+  // Note: Ideally status/category should also be filtered on backend
   const filteredFunds = funds.filter(
     (fund) =>
       (filterStatus === "all" || fund.status === filterStatus) &&
-      (filterCategory === "all" || fund.category === filterCategory) &&
-      fund.title.toLowerCase().includes(searchText.toLowerCase())
+      (filterCategory === "all" || fund.category === filterCategory)
   );
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const paginatedFunds = filteredFunds.slice(startIndex, startIndex + pageSize);
+  // No slicing here!
+  const paginatedFunds = filteredFunds;
 
   const statusMenu = (
     <Menu>
@@ -381,7 +384,7 @@ const FundList = () => {
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
-                total={filteredFunds.length}
+                total={totalFunds}
                 onChange={(page) => setCurrentPage(page)}
                 showSizeChanger={false}
                 style={{ borderRadius: 6, padding: "2px 8px" }}
