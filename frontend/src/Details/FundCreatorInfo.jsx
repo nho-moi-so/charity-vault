@@ -9,7 +9,13 @@ import {
 
 const { Text, Link, Title } = Typography;
 
-const FundCreatorInfo = () => {
+const FundCreatorInfo = ({ fund }) => {
+  const creator = fund?.creator || fund?.creatorInfo || {};
+  const creatorName = creator.organization || creator.name || "Người gây quỹ";
+  const creatorAddress = creator.address || "Chưa cập nhật";
+  const creatorEmail = creator.email || "Chưa cập nhật";
+  const creatorPhone = creator.phone || "Chưa cập nhật";
+
   return (
     <Card
       bordered={false}
@@ -37,7 +43,7 @@ const FundCreatorInfo = () => {
             margin: 0,
           }}
         >
-          Quỹ Thiện Nguyện Việt Nam
+          {creatorName}
         </Title>
       </div>
 
@@ -52,36 +58,32 @@ const FundCreatorInfo = () => {
         <Space>
           <HomeOutlined style={{ color: "#52c41a", fontSize: 20 }} />
           <Text strong>Địa chỉ:</Text>
-          <Text>123 Nguyễn Trãi, Quận 5, TP.HCM</Text>
+          <Text>{creatorAddress}</Text>
         </Space>
 
         <Space>
           <MailOutlined style={{ color: "#faad14", fontSize: 20 }} />
           <Text strong>Email:</Text>
           <Link
-            href="mailto:support@quythiennguyen.vn"
+            href={`mailto:${creatorEmail}`}
             style={{ transition: "color 0.3s" }}
           >
-            support@quythiennguyen.vn
+            {creatorEmail}
           </Link>
         </Space>
 
         <Space>
           <FacebookOutlined style={{ color: "#1677ff", fontSize: 20 }} />
           <Text strong>Facebook:</Text>
-          <Link
-            href="https://facebook.com/quythiennguyen"
-            target="_blank"
-            style={{ transition: "color 0.3s" }}
-          >
-            facebook.com/quythiennguyen
+          <Link href="#" target="_blank" style={{ transition: "color 0.3s" }}>
+            Chưa cập nhật
           </Link>
         </Space>
 
         <Space>
           <PhoneOutlined style={{ color: "#eb2f96", fontSize: 20 }} />
           <Text strong>Số điện thoại:</Text>
-          <Text>0909 123 456</Text>
+          <Text>{creatorPhone}</Text>
         </Space>
       </Space>
     </Card>

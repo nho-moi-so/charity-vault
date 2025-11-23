@@ -22,7 +22,6 @@ import {
 import {
   FileTextOutlined,
   FundProjectionScreenOutlined,
-  BankOutlined,
   CheckCircleOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
@@ -48,6 +47,14 @@ const TaoQuyMoi = () => {
 
   useEffect(() => {
     checkWalletConnection();
+
+    const handleAuthChange = (event) => {
+      const user = event.detail;
+      setWalletAddress(user?.address || null);
+    };
+
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
   const checkWalletConnection = async () => {
@@ -91,7 +98,6 @@ const TaoQuyMoi = () => {
       "linkGioiThieu",
       "thanhTich",
     ],
-    // Step 2 Fields
     [
       "mucDich",
       "camKetCongKhai",
@@ -105,8 +111,6 @@ const TaoQuyMoi = () => {
       "ngayBatDau",
       "ngayKetThuc",
     ],
-    // Step 3 Fields
-    ["chuTaiKhoan", "soTaiKhoan", "nganHang", "chiNhanh", "qrCode"],
   ];
 
   const next = () => {
@@ -164,13 +168,6 @@ const TaoQuyMoi = () => {
             thumbnails: getFileUrls(values.anhThumbnail),
             logo: getFileUrl(values.logo),
           },
-          bankAccount: {
-            accountName: values.chuTaiKhoan,
-            accountNumber: values.soTaiKhoan,
-            bank: values.nganHang,
-            branch: values.chiNhanh,
-            qrCode: getFileUrl(values.qrCode),
-          },
           creator: {
             name: values.hoTen,
             email: values.email,
@@ -209,6 +206,10 @@ const TaoQuyMoi = () => {
               metadataURI,
               owner: walletAddress,
               txHash: receipt.hash,
+              image: getFileUrl(values.anhChinh),
+              thumbnails: getFileUrls(values.anhThumbnail),
+              description: values.moTaNgan,
+              category: values.danhMuc,
             });
           } catch (error) {
             console.error("Error syncing with backend:", error);
@@ -233,6 +234,11 @@ const TaoQuyMoi = () => {
     }
   };
 
+  const disabledDate = (current) => {
+    // Không cho chọn ngày trước ngày hiện tại
+    return current && current.valueOf() < new Date().setHours(0, 0, 0, 0);
+  };
+
   const steps = [
     // ================= BUOC 1 =================
     {
@@ -251,10 +257,10 @@ const TaoQuyMoi = () => {
             name="hoTen"
             rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
           >
-            <Input placeholder="Ví dụ: Nguyễn Văn A" />
+            <Input placeholder="Nhập họ và tên..." />
           </Form.Item>
 
-          <Form.Item label="2. Ngày/tháng/năm sinh (Tùy chọn)" name="ngaySinh">
+          <Form.Item label="2. Ngày sinh (Tùy chọn)" name="ngaySinh">
             <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
           </Form.Item>
 
@@ -263,7 +269,7 @@ const TaoQuyMoi = () => {
             name="dienThoai"
             rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
           >
-            <Input placeholder="Số điện thoại của bạn..." />
+            <Input placeholder="Nhập số điện thoại..." />
           </Form.Item>
 
           <Form.Item
@@ -274,28 +280,24 @@ const TaoQuyMoi = () => {
               { type: "email", message: "Địa chỉ email không hợp lệ" },
             ]}
           >
-            <Input placeholder="Ví dụ: email@example.com" />
+            <Input placeholder="email@example.com" />
           </Form.Item>
 
-          <Form.Item
-            label="5. Tài khoản mạng xã hội của bạn (Tùy chọn)"
-            name="social"
-          >
+          <Form.Item label="5. Tài khoản mạng xã hội (Tùy chọn)" name="social">
             <Input placeholder="Nhập link tài khoản mạng xã hội..." />
           </Form.Item>
 
-          <Form.Item label="6. Địa chỉ thường trú (Tùy chọn)" name="diaChi">
-            <Input placeholder="Nhập địa chỉ của bạn..." />
+          <Form.Item label="6. Địa chỉ (Tùy chọn)" name="diaChi">
+            <Input placeholder="Nhập địa chỉ..." />
           </Form.Item>
 
-          <Form.Item label="7. Tên CLB/Đội/Nhóm (Tùy chọn)" name="tenNhom">
+          <Form.Item label="7. Tên nhóm (Tùy chọn)" name="tenNhom">
             <Input placeholder="Nhập tên nhóm..." />
           </Form.Item>
 
           <Form.Item label="8. Vai trò (Tùy chọn)" name="vaiTro">
             <Radio.Group>
               <Radio value="nguoiSangLap">Người sáng lập</Radio>
-              <Radio value="chiNhiem">Chủ nhiệm</Radio>
               <Radio value="caNhan">Cá nhân</Radio>
             </Radio.Group>
           </Form.Item>
@@ -332,23 +334,7 @@ const TaoQuyMoi = () => {
           </Form.Item>
 
           <Form.Item
-            label="10. Link / website mạng xã hội"
-            name="linkGioiThieu"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập link hoặc mô tả hoạt động",
-              },
-            ]}
-          >
-            <Input.TextArea
-              placeholder="Nhập link hoặc mô tả hoạt động..."
-              rows={3}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="11. Thành tích, khen thưởng (Tùy chọn)"
+            label="10. Thành tích, khen thưởng (Tùy chọn)"
             name="thanhTich"
             getValueFromEvent={(e) => {
               if (Array.isArray(e)) return e;
@@ -404,37 +390,40 @@ const TaoQuyMoi = () => {
           </Form.Item>
 
           <Form.Item
-            label="2. Cam kết công khai thông tin quỹ (Tùy chọn)"
+            label="2. Cam kết công khai thông tin quỹ"
             name="camKetCongKhai"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn cam kết",
+              },
+            ]}
           >
             <Radio.Group>
               <Radio value="dongy">Đồng ý</Radio>
-              <Radio value="khongdongy">Không đồng ý</Radio>
             </Radio.Group>
           </Form.Item>
 
           <Form.Item
             label="3. Tên quỹ"
             name="tenQuy"
-            rules={[{ required: true, message: "Vui lòng nhập tên quỹ" }]}
+            rules={[{ required: true, message: "Nhập tên quỹ" }]}
           >
-            <Input placeholder="Ví dụ: Chung tay vì miền Trung" />
+            <Input placeholder="Nhập tên quỹ..." />
           </Form.Item>
 
           <Form.Item
             label="4. Mô tả ngắn"
             name="moTaNgan"
-            rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn" }]}
+            rules={[{ required: true, message: "Nhập mô tả ngắn" }]}
           >
-            <Input placeholder="Nhập mô tả ngắn..." />
+            <Input placeholder="Nhập mô tả..." />
           </Form.Item>
 
           <Form.Item
             label="5. Giới thiệu quỹ"
             name="gioiThieu"
-            rules={[
-              { required: true, message: "Vui lòng nhập giới thiệu quỹ" },
-            ]}
+            rules={[{ required: true, message: "Nhập giới thiệu quỹ" }]}
           >
             <Input.TextArea
               rows={3}
@@ -449,9 +438,7 @@ const TaoQuyMoi = () => {
               if (Array.isArray(e)) return e;
               return e && e.fileList;
             }}
-            rules={[
-              { required: true, message: "Vui lòng tải lên ảnh chính cho quỹ" },
-            ]}
+            rules={[{ required: true, message: "Tải lên ảnh chính cho quỹ" }]}
           >
             <Upload
               listType="picture-card"
@@ -559,7 +546,11 @@ const TaoQuyMoi = () => {
                 name="ngayBatDau"
                 rules={[{ required: true, message: "Chọn ngày bắt đầu" }]}
               >
-                <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+                <DatePicker
+                  format="DD/MM/YYYY"
+                  style={{ width: "100%" }}
+                  disabledDate={disabledDate}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -568,97 +559,14 @@ const TaoQuyMoi = () => {
                 name="ngayKetThuc"
                 rules={[{ required: true, message: "Chọn ngày kết thúc" }]}
               >
-                <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+                <DatePicker
+                  format="DD/MM/YYYY"
+                  style={{ width: "100%" }}
+                  disabledDate={disabledDate}
+                />
               </Form.Item>
             </Col>
           </Row>
-        </>
-      ),
-    },
-
-    // ================= BUOC 3 =================
-    {
-      title: "Tài khoản ngân hàng",
-      icon: <BankOutlined />,
-      content: (
-        <>
-          <Title level={4}>Phần III: Thông tin tài khoản ngân hàng</Title>
-          <Paragraph style={{ color: "#555" }}>
-            Vui lòng nhập chính xác thông tin tài khoản nhận quyên góp.
-          </Paragraph>
-
-          <Form.Item
-            label="1. Tên chủ tài khoản"
-            name="chuTaiKhoan"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên chủ tài khoản" },
-            ]}
-          >
-            <Input placeholder="Nhập tên chủ tài khoản..." />
-          </Form.Item>
-
-          <Form.Item
-            label="2. Số tài khoản"
-            name="soTaiKhoan"
-            rules={[{ required: true, message: "Vui lòng nhập số tài khoản" }]}
-          >
-            <Input
-              placeholder="Nhập số tài khoản ngân hàng..."
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={20}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="3. Ngân hàng"
-            name="nganHang"
-            rules={[{ required: true, message: "Vui lòng chọn ngân hàng" }]}
-          >
-            <Select placeholder="Chọn ngân hàng">
-              <Option value="MB Bank">MB Bank</Option>
-              <Option value="Vietcombank">Vietcombank</Option>
-              <Option value="BIDV">BIDV</Option>
-              <Option value="Techcombank">Techcombank</Option>
-              <Option value="Agribank">Agribank</Option>
-              <Option value="Sacombank">Sacombank</Option>
-              <Option value="ACB">ACB</Option>
-              <Option value="Khác">Khác</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="4. Chi nhánh ngân hàng (Tùy chọn)" name="chiNhanh">
-            <Input placeholder="Nhập chi nhánh..." />
-          </Form.Item>
-
-          <Form.Item
-            label="5. Mã QR nhận quyên góp (nếu có)"
-            name="qrCode"
-            getValueFromEvent={(e) => {
-              if (Array.isArray(e)) return e;
-              return e && e.fileList;
-            }}
-          >
-            <Upload
-              listType="picture-card"
-              maxCount={1}
-              customRequest={async ({ file, onSuccess, onError }) => {
-                try {
-                  const response = await uploadAPI.uploadImage(file);
-                  if (response.data.success) {
-                    file.url = response.data.url;
-                    onSuccess(response.data, file);
-                  } else {
-                    onError(new Error(response.data.message));
-                  }
-                } catch (error) {
-                  onError(error);
-                }
-              }}
-            >
-              <Button icon={<UploadOutlined />}>Tải lên mã QR</Button>
-            </Upload>
-          </Form.Item>
         </>
       ),
     },
@@ -787,7 +695,6 @@ const TaoQuyMoi = () => {
                   onClick={handleFinish}
                   icon={<CheckCircleOutlined />}
                   loading={loading}
-                  disabled={!walletAddress}
                 >
                   Hoàn tất
                 </Button>

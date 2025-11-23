@@ -2,9 +2,9 @@
 import { ethers } from "ethers";
 
 // Địa chỉ Smart Contract - có thể cấu hình qua environment variable
-const CONTRACT_ADDRESS =
-  process.env.REACT_APP_CONTRACT_ADDRESS ||
-  "0x48d617fE605f380f065e7F9a44A545d03496755a";
+const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS;
+
+console.log("Contract Address:", CONTRACT_ADDRESS);
 
 // ABI đầy đủ của CharityVault contract
 const CONTRACT_ABI = [

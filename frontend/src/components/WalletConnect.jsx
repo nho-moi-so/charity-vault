@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { loginWithAddress } from "../services/authService";
+import { loginWithAddress, ensureWalletLogin } from "../services/authService";
+import { Button } from "antd";
 
 // Component nhận setAccount và setError làm props
 const WalletConnect = ({ setAccount, setError }) => {
@@ -15,28 +16,32 @@ const WalletConnect = ({ setAccount, setError }) => {
   };
 
   useEffect(() => {
-    const checkWallet = setTimeout(() => {
-      if (window.ethereum) {
-        window.ethereum
-          .request({ method: "eth_accounts" })
-          .then((accounts) => {
-            if (accounts.length > 0) {
-              const account = accounts[0];
-              setLocalAccount(account);
-              setAccount(account);
-              handleLoginWithAccount(account);
-            }
-          })
-          .catch((err) => {
-            console.error("Lỗi kiểm tra eth_accounts:", err);
-            setLocalError("Không thể tải trạng thái ví.");
-          });
-      } else {
-        setLocalError("MetaMask không được tìm thấy.");
+    const checkWallet = async () => {
+      const user = await ensureWalletLogin();
+      if (user && user.address) {
+        setLocalAccount(user.address);
+        setAccount(user.address);
       }
-    }, 100);
+    };
 
-    return () => clearTimeout(checkWallet);
+    checkWallet();
+
+    const handleAuthChange = (event) => {
+      const user = event.detail;
+      if (user && user.address) {
+        setLocalAccount(user.address);
+        setAccount(user.address);
+      } else {
+        setLocalAccount(null);
+        setAccount(null);
+      }
+    };
+
+    window.addEventListener("auth-change", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+    };
   }, [setAccount]);
 
   const handleConnect = async () => {
@@ -74,17 +79,17 @@ const WalletConnect = ({ setAccount, setError }) => {
     <div>
       {localAccount ? (
         <p>
-          ✅ <strong>Đã kết nối:</strong>{" "}
-          {localAccount.substring(0, 6)}...
+          ✅ <strong>Đã kết nối:</strong> {localAccount.substring(0, 6)}...
           {localAccount.substring(localAccount.length - 4)}
         </p>
       ) : (
-        <button
+        <Button
           onClick={handleConnect}
           disabled={localError && !window.ethereum}
+          type="primary"
         >
           Kết nối Ví MetaMask
-        </button>
+        </Button>
       )}
       {localError && <p style={{ color: "red" }}>Lỗi: {localError}</p>}
     </div>

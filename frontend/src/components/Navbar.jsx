@@ -30,6 +30,16 @@ const Navbar = () => {
     };
 
     syncUser();
+
+    const handleAuthChange = (event) => {
+      setUser(event.detail);
+    };
+
+    window.addEventListener("auth-change", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -61,7 +71,9 @@ const Navbar = () => {
       items={[
         {
           key: "1",
-          label: <span onClick={() => navigate("/profile")}>Xem trang cá nhân</span>,
+          label: (
+            <span onClick={() => navigate("/profile")}>Xem trang cá nhân</span>
+          ),
         },
         {
           key: "2",
@@ -77,11 +89,19 @@ const Navbar = () => {
       items={[
         {
           key: "policy-1",
-          label: <span onClick={() => navigate("/dieu-khoan")}>Điều khoản sử dụng</span>,
+          label: (
+            <span onClick={() => navigate("/dieu-khoan")}>
+              Điều khoản sử dụng
+            </span>
+          ),
         },
         {
           key: "policy-2",
-          label: <span onClick={() => navigate("/chinh-sach-bao-mat")}>Chính sách bảo mật</span>,
+          label: (
+            <span onClick={() => navigate("/chinh-sach-bao-mat")}>
+              Chính sách bảo mật
+            </span>
+          ),
         },
       ]}
     />
@@ -134,12 +154,22 @@ const Navbar = () => {
           mode="horizontal"
           defaultSelectedKeys={["1"]}
           items={[
-            { key: "1", label: <span onClick={() => navigate("/")}>Trang chủ</span> },
-            { key: "2", label: <span onClick={() => navigate("/funds")}>Gây quỹ</span> },
-          {
-            key: "3",
-            label: <span onClick={() => navigate("/gioi-thieu-quy")}>Giới thiệu</span>,
-          },
+            {
+              key: "1",
+              label: <span onClick={() => navigate("/")}>Trang chủ</span>,
+            },
+            {
+              key: "2",
+              label: <span onClick={() => navigate("/funds")}>Gây quỹ</span>,
+            },
+            {
+              key: "3",
+              label: (
+                <span onClick={() => navigate("/gioi-thieu-quy")}>
+                  Giới thiệu
+                </span>
+              ),
+            },
             {
               key: "4",
               label: (
@@ -192,10 +222,20 @@ const Navbar = () => {
                   size={40}
                   icon={!user?.avatar && <UserOutlined />}
                 />
-                <span style={{ fontSize: 14, color: "#333", display: "flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    fontSize: 14,
+                    color: "#333",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
                   {user?.username ||
                     (user?.address
-                      ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}`
+                      ? `${user.address.slice(0, 6)}...${user.address.slice(
+                          -4
+                        )}`
                       : "Người dùng")}
                   <DownOutlined style={{ fontSize: 12 }} />
                 </span>

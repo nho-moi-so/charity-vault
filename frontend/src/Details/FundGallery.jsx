@@ -3,15 +3,24 @@ import { Image } from "antd";
 import Slider from "react-slick";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 
-const FundGallery = () => {
-  const thumbnails = [
-    "https://i.pinimg.com/736x/18/37/d6/1837d62b24f71016365c97ae4df12c0a.jpg",
-    "https://i.pinimg.com/736x/2b/69/a8/2b69a886f1785faa63853dae3a5b546c.jpg",
-    "https://i.pinimg.com/736x/21/72/17/21721718c8f434b705a2034223911799.jpg",
-    "https://i.pinimg.com/736x/a0/b5/7e/a0b57eea813c891c3f93b511db209421.jpg",
-    "https://i.pinimg.com/736x/30/9a/37/309a3761e71586b3b017b32760247b64.jpg",
-    "https://i.pinimg.com/736x/1b/f5/9f/1bf59fdbf3f26e2d0b14d64a23f0246a.jpg",
-  ];
+const FundGallery = ({ fund }) => {
+  // Tạo danh sách ảnh từ dữ liệu quỹ
+  const images = [];
+
+  if (fund?.image) {
+    images.push(fund.image);
+  }
+
+  if (fund?.thumbnails && Array.isArray(fund.thumbnails)) {
+    images.push(...fund.thumbnails);
+  }
+
+  // Nếu không có ảnh nào, dùng ảnh placeholder
+  if (images.length === 0) {
+    images.push("https://via.placeholder.com/800x600?text=No+Image");
+  }
+
+  const thumbnails = images;
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const mainSlider = useRef(null);

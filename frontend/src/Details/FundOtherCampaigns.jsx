@@ -1,70 +1,41 @@
-import React, { useState } from "react";
-import { Card, Typography, Row, Col, Button, Progress } from "antd";
-import { LeftOutlined, RightOutlined, PictureOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { fundAPI } from "../services/api";
+import { Link, useNavigate } from "react-router-dom";
+import { Button, Card, Col, Progress, Row, Typography } from "antd";
+import {
+  LeftOutlined,
+  PictureOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
 
-const { Title, Text, Link } = Typography;
+const { Title, Text } = Typography;
 
-const campaigns = [
-  {
-    id: 1,
-    title: "Chung Tay Vì Miền Trung",
-    img: "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
-    donated: 120000000,
-    goal: 200000000,
-    daysLeft: 12,
-    fundName: "Quỹ Thiện Tâm Việt",
-  },
-  {
-    id: 2,
-    title: "Tiếp Sức Đến Trường",
-    img: "https://i.pinimg.com/1200x/a4/77/f1/a477f1953b54dffd8961bb9fd9264c51.jpg",
-    donated: 85000000,
-    goal: 150000000,
-    daysLeft: 20,
-    fundName:
-      "Quỹ Hy Vọng Xanh – Nơi kết nối yêu thương giúp trẻ em vùng cao tiếp tục hành trình đến trường",
-  },
-  {
-    id: 3,
-    title: "Tết Ấm Cho Người Nghèo",
-    img: "",
-    donated: 50000000,
-    goal: 100000000,
-    daysLeft: 8,
-    fundName: "Quỹ Ánh Dương",
-  },
-  {
-    id: 4,
-    title: "Mùa Đông Không Lạnh",
-    img: "https://taadgroup.vn/wp-content/uploads/2023/06/ao-am-cho-em-2022-1024x1024.jpg",
-    donated: 90000000,
-    goal: 120000000,
-    daysLeft: 5,
-    fundName: "Quỹ Trái Tim Hồng",
-  },
-  {
-    id: 5,
-    title: "Bữa Cơm Yêu Thương",
-    img: "https://cdn.pixabay.com/photo/2017/08/02/23/27/people-2579317_1280.jpg",
-    donated: 60000000,
-    goal: 100000000,
-    daysLeft: 15,
-    fundName: "Quỹ Nụ Cười Việt",
-  },
-  {
-    id: 6,
-    title: "Ánh Sáng Cho Em",
-    img: "https://cdn.pixabay.com/photo/2017/07/31/11/21/children-2553078_1280.jpg",
-    donated: 70000000,
-    goal: 120000000,
-    daysLeft: 10,
-    fundName: "Quỹ Hy Vọng Sáng",
-  },
-];
-
-const FundOtherCampaigns = () => {
+const FundOtherCampaigns = ({ currentFundId }) => {
+  const [campaigns, setCampaigns] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
   const visibleCards = 3;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const response = await fundAPI.getAll();
+        if (response.data.success) {
+          // Lọc bỏ quỹ hiện tại
+          const otherFunds = response.data.funds.filter(
+            (f) => f.fundId !== currentFundId && f._id !== currentFundId
+          );
+          setCampaigns(otherFunds);
+        }
+      } catch (error) {
+        console.error("Error fetching other campaigns:", error);
+      }
+    };
+
+    fetchCampaigns();
+  }, [currentFundId]);
+
+  if (campaigns.length === 0) return null;
 
   const handlePrev = () => {
     setStartIndex((prev) =>
@@ -98,7 +69,6 @@ const FundOtherCampaigns = () => {
         padding: "30px 40px",
       }}
     >
-
       <div
         style={{
           display: "flex",
@@ -111,7 +81,7 @@ const FundOtherCampaigns = () => {
           Các chiến dịch gây quỹ khác
         </Title>
         <Link
-          href="/funds"
+          to="/funds"
           style={{
             fontSize: 16,
             color: "#117529ff",
@@ -127,11 +97,26 @@ const FundOtherCampaigns = () => {
 
         <Row gutter={[24, 24]} style={{ flex: 1 }}>
           {visibleCampaigns.map((item) => {
-            const percent = Math.min((item.donated / item.goal) * 100, 100);
+            const goal = item.goal || 1;
+            const donated = item.totalReceived || 0;
+            const percent = Math.min((donated / goal) * 100, 100);
+
+            // Tính ngày còn lại
+            const endDate = item.endDate ? new Date(item.endDate) : new Date();
+            const today = new Date();
+            const timeDiff = endDate.getTime() - today.getTime();
+            const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+            const creatorName =
+              item.creatorInfo?.organization ||
+              item.creatorInfo?.name ||
+              "Người gây quỹ";
+
             return (
-              <Col xs={24} sm={12} md={8} key={item.id}>
+              <Col xs={24} sm={12} md={8} key={item._id || item.fundId}>
                 <Card
                   hoverable
+                  onClick={() => navigate(`/funds/${item.fundId}`)}
                   style={{
                     borderRadius: 12,
                     overflow: "hidden",
@@ -150,10 +135,10 @@ const FundOtherCampaigns = () => {
                         justifyContent: "center",
                       }}
                     >
-                      {item.img ? (
+                      {item.image ? (
                         <img
                           alt={item.title}
-                          src={item.img}
+                          src={item.image}
                           style={{
                             height: "100%",
                             width: "100%",
@@ -181,7 +166,7 @@ const FundOtherCampaigns = () => {
                           fontSize: 13,
                         }}
                       >
-                        ⏰ {item.daysLeft} ngày còn lại
+                        ⏰ {daysLeft > 0 ? daysLeft : 0} ngày còn lại
                       </div>
                     </div>
                   }
@@ -216,7 +201,7 @@ const FundOtherCampaigns = () => {
                       marginBottom: 8,
                     }}
                   >
-                    {item.fundName}
+                    {creatorName}
                   </div>
 
                   <Progress
@@ -235,9 +220,9 @@ const FundOtherCampaigns = () => {
                     }}
                   >
                     <Text strong style={{ color: "#117529" }}>
-                      {formatMoney(item.donated)}
+                      {formatMoney(donated)}
                     </Text>
-                    <Text type="secondary">{formatMoney(item.goal)}</Text>
+                    <Text type="secondary">{formatMoney(goal)}</Text>
                   </div>
                 </Card>
               </Col>
