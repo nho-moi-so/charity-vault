@@ -58,6 +58,8 @@ const FundInfoBox = ({ fund, blockchainData }) => {
   const creatorName =
     fund.creatorInfo?.organization || fund.creatorInfo?.name || "Người gây quỹ";
 
+  const isGoalReached = raised >= goal;
+
   return (
     <Card
       bordered={false}
@@ -163,29 +165,53 @@ const FundInfoBox = ({ fund, blockchainData }) => {
         type="primary"
         block
         size="large"
+        disabled={remainingDays < 0 || isGoalReached}
         style={{
-          background: "linear-gradient(90deg, #a8e063 0%, #56ab2f 100%)",
+          background:
+            remainingDays < 0 || isGoalReached
+              ? "#d9d9d9"
+              : "linear-gradient(90deg, #a8e063 0%, #56ab2f 100%)",
           border: "none",
           borderRadius: "10px",
           fontWeight: 700,
           fontSize: "22px",
           height: 50,
-          color: "white",
+          color:
+            remainingDays < 0 || isGoalReached
+              ? "rgba(0, 0, 0, 0.25)"
+              : "white",
           letterSpacing: "0.5px",
           marginBottom: 20,
           transition: "all 0.5s ease",
-          boxShadow: "0 4px 12px rgba(86,171,47,0.4)",
+          boxShadow:
+            remainingDays < 0 || isGoalReached
+              ? "none"
+              : "0 4px 12px rgba(86,171,47,0.4)",
           backgroundSize: "200% 200%",
+          cursor:
+            remainingDays < 0 || isGoalReached ? "not-allowed" : "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundPosition = "right center";
+          if (remainingDays >= 0 && !isGoalReached) {
+            e.currentTarget.style.backgroundPosition = "right center";
+          }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundPosition = "left center";
+          if (remainingDays >= 0 && !isGoalReached) {
+            e.currentTarget.style.backgroundPosition = "left center";
+          }
         }}
-        onClick={() => navigate(`/donate/${fund.fundId}`)}
+        onClick={() => {
+          if (remainingDays >= 0 && !isGoalReached) {
+            navigate(`/donate/${fund.fundId}`);
+          }
+        }}
       >
-        Ủng hộ
+        {remainingDays < 0
+          ? "Đã kết thúc"
+          : isGoalReached
+          ? "Đã đạt đủ chỉ tiêu"
+          : "Ủng hộ"}
       </Button>
 
       {/* <div style={{ textAlign: "center" }}>

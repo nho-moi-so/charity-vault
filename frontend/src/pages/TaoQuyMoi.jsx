@@ -175,6 +175,7 @@ const TaoQuyMoi = () => {
             address: values.diaChi,
             organization: values.tenNhom,
             role: values.vaiTro,
+            facebook: values.social,
           },
         };
 

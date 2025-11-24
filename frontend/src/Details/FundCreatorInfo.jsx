@@ -15,6 +15,7 @@ const FundCreatorInfo = ({ fund }) => {
   const creatorAddress = creator.address || "Chưa cập nhật";
   const creatorEmail = creator.email || "Chưa cập nhật";
   const creatorPhone = creator.phone || "Chưa cập nhật";
+  const creatorFacebook = creator.facebook || "Chưa cập nhật";
 
   return (
     <Card
@@ -75,8 +76,14 @@ const FundCreatorInfo = ({ fund }) => {
         <Space>
           <FacebookOutlined style={{ color: "#1677ff", fontSize: 20 }} />
           <Text strong>Facebook:</Text>
-          <Link href="#" target="_blank" style={{ transition: "color 0.3s" }}>
-            Chưa cập nhật
+          <Link
+            href={
+              creatorFacebook !== "Chưa cập nhật" ? creatorFacebook : undefined
+            }
+            target="_blank"
+            style={{ transition: "color 0.3s" }}
+          >
+            {creatorFacebook}
           </Link>
         </Space>
 

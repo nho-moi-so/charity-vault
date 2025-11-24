@@ -28,11 +28,7 @@ const FundGallery = ({ fund }) => {
     images.push("https://via.placeholder.com/800x600?text=No+Image");
   }
 
-  console.log("FundGallery - Fund:", fund);
-  console.log("FundGallery - Images:", images);
-
   const thumbnails = images;
-
   const [selectedIndex, setSelectedIndex] = useState(0);
   const mainSlider = useRef(null);
   const thumbSlider = useRef(null);
