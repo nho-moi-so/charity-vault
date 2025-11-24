@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, message } from "antd";
 
-const defaultCover = "https://cdn.pixabay.com/photo/2021/08/20/03/57/boy-6559419_1280.jpg";
-const defaultAvatar = "https://i.pinimg.com/736x/06/27/e4/0627e47e1b9c55a407132520dcf6091b.jpg";
+const defaultCover =
+  "https://cdn.pixabay.com/photo/2021/08/20/03/57/boy-6559419_1280.jpg";
+const defaultAvatar =
+  "https://i.pinimg.com/736x/06/27/e4/0627e47e1b9c55a407132520dcf6091b.jpg";
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -71,7 +73,7 @@ const CoverSection = ({ user, onProfileUpdate }) => {
         style={{ height: 500, width: "100%", position: "relative" }}
         onMouseEnter={() => setHoverCover(true)}
         onMouseLeave={() => setHoverCover(false)}
-        onClick={() => coverInputRef.current.click()} 
+        onClick={() => coverInputRef.current.click()}
       >
         <img
           src={cover}
@@ -123,7 +125,7 @@ const CoverSection = ({ user, onProfileUpdate }) => {
           style={{ position: "relative", cursor: "pointer" }}
           onMouseEnter={() => setHoverAvatar(true)}
           onMouseLeave={() => setHoverAvatar(false)}
-          onClick={() => avatarInputRef.current.click()} 
+          onClick={() => avatarInputRef.current.click()}
         >
           <Avatar
             src={avatar}
@@ -169,7 +171,9 @@ const CoverSection = ({ user, onProfileUpdate }) => {
               : "@unknown"}
           </p>
           {updatingField && (
-            <p style={{ color: "#52c41a", fontSize: 12 }}>Đang cập nhật ảnh...</p>
+            <p style={{ color: "#52c41a", fontSize: 12 }}>
+              Đang cập nhật ảnh...
+            </p>
           )}
         </div>
       </div>

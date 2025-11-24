@@ -80,8 +80,6 @@ const FundList = () => {
 
       const response = await fundAPI.getAll(params);
 
-      console.log("Data: ", response.data);
-
       if (response.data.success) {
         // Map data từ backend format sang frontend format
         // Map data từ backend format sang frontend format

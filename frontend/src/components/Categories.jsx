@@ -94,7 +94,7 @@ const Categories = () => {
           justifyContent: "space-between",
           alignItems: "center",
           overflow: "hidden",
-          marginTop:"20px",
+          marginTop: "20px",
           width: "80%",
           maxWidth: "1200px",
         }}

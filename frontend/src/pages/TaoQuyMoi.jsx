@@ -196,7 +196,6 @@ const TaoQuyMoi = () => {
           "../services/Web3Service"
         );
         const fundId = await getFundIdFromReceipt(receipt);
-        console.log("Fund Created with ID:", fundId);
 
         // Sync với backend
         if (fundId !== null) {

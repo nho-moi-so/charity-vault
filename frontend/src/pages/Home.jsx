@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import Slider from "../components/Slider";
 import Categories from "../components/Categories";
 import FeaturedCampaigns from "../components/FeaturedCampaigns";
-import CaNhanNoiBat  from "../components/CaNhanNoiBat";
+import CaNhanNoiBat from "../components/CaNhanNoiBat";
 import FooterSection from "../components/FooterSection";
 
 const Home = () => {
@@ -13,8 +13,8 @@ const Home = () => {
       <div style={{ maxWidth: "1500px", margin: "20px auto" }}>
         <Slider />
         <Categories />
-         <FeaturedCampaigns />
-           <CaNhanNoiBat />
+        <FeaturedCampaigns />
+        <CaNhanNoiBat />
       </div>
       <FooterSection />
     </>

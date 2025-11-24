@@ -113,11 +113,6 @@ const DonatePage = () => {
       // Ensure we send a string with 18 decimals max to avoid overflow/underflow issues in parsing
       const amountETHString = amountETH.toFixed(18);
 
-      console.log("Số tiền VND:", amountVND);
-      console.log("Tỷ giá ETH:", ethPrice);
-      console.log("Số ETH sẽ gửi:", amountETHString);
-      console.log("Fund ID (Blockchain):", fund.fundId);
-
       setThankMessage("⏳ Đang xử lý giao dịch trên blockchain...");
 
       const receipt = await handleDonation(fund.fundId, amountETHString);

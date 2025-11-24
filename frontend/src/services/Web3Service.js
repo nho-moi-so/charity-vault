@@ -4,8 +4,6 @@ import { ethers } from "ethers";
 // Địa chỉ Smart Contract - có thể cấu hình qua environment variable
 const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS;
 
-console.log("Contract Address:", CONTRACT_ADDRESS);
-
 // ABI đầy đủ của CharityVault contract
 const CONTRACT_ABI = [
   {
@@ -284,7 +282,7 @@ const checkAndSwitchNetwork = async () => {
 
   try {
     const chainId = await window.ethereum.request({ method: "eth_chainId" });
-    console.log("Current chainId:", chainId);
+
     if (chainId !== SEPOLIA_CHAIN_ID) {
       try {
         await window.ethereum.request({
@@ -390,10 +388,8 @@ export const createFund = async (title, metadataURI) => {
   try {
     await checkAndSwitchNetwork();
     const contract = await getContract();
-    console.log("Calling createFund with:", { title, metadataURI });
     const tx = await contract.createFund(title, metadataURI);
     const receipt = await tx.wait();
-    console.log("Tạo quỹ thành công:", receipt);
     return receipt;
   } catch (error) {
     console.error("Lỗi tạo quỹ:", error);
@@ -422,7 +418,7 @@ export const handleDonation = async (fundId, amountETHString) => {
     const tx = await contract.donate(fundIdBigInt, { value: amountWei });
 
     const receipt = await tx.wait();
-    console.log("Giao dịch donate hoàn tất:", receipt);
+
     return receipt;
   } catch (error) {
     console.error("Lỗi trong handleDonation:", error);

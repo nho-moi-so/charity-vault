@@ -23,10 +23,18 @@ const GioiThieuQuy = () => {
           GIỚI THIỆU VỀ QUỸ QUYÊN GÓP MINH BẠCH
         </Title>
 
-        <Paragraph style={{ fontSize: 16, color: "#555", maxWidth: 900, margin: "20px auto" }}>
-          Nền tảng <Text strong>Quỹ Quyên Góp Minh Bạch</Text> ra đời với sứ mệnh mang đến 
-          một hệ thống gây quỹ và quyên góp công khai, minh bạch, giúp mọi cá nhân và tổ chức 
-          có thể dễ dàng kết nối, đóng góp và theo dõi từng khoản hỗ trợ đến tay người cần giúp đỡ.
+        <Paragraph
+          style={{
+            fontSize: 16,
+            color: "#555",
+            maxWidth: 900,
+            margin: "20px auto",
+          }}
+        >
+          Nền tảng <Text strong>Quỹ Quyên Góp Minh Bạch</Text> ra đời với sứ
+          mệnh mang đến một hệ thống gây quỹ và quyên góp công khai, minh bạch,
+          giúp mọi cá nhân và tổ chức có thể dễ dàng kết nối, đóng góp và theo
+          dõi từng khoản hỗ trợ đến tay người cần giúp đỡ.
         </Paragraph>
 
         <Divider />
@@ -51,8 +59,8 @@ const GioiThieuQuy = () => {
                 Minh bạch tuyệt đối
               </Title>
               <Paragraph style={{ color: "#555" }}>
-                Mọi giao dịch quyên góp, chi tiêu và sao kê đều được công khai để người ủng hộ 
-                dễ dàng theo dõi và giám sát.
+                Mọi giao dịch quyên góp, chi tiêu và sao kê đều được công khai
+                để người ủng hộ dễ dàng theo dõi và giám sát.
               </Paragraph>
             </Card>
           </Col>
@@ -76,7 +84,7 @@ const GioiThieuQuy = () => {
                 Kết nối cộng đồng
               </Title>
               <Paragraph style={{ color: "#555" }}>
-                Kết nối các nhà hảo tâm, tổ chức và người cần giúp đỡ thông qua 
+                Kết nối các nhà hảo tâm, tổ chức và người cần giúp đỡ thông qua
                 nền tảng đáng tin cậy và thuận tiện.
               </Paragraph>
             </Card>
@@ -101,8 +109,8 @@ const GioiThieuQuy = () => {
                 Hiệu quả & Tin cậy
               </Title>
               <Paragraph style={{ color: "#555" }}>
-                Đảm bảo tiền ủng hộ đến đúng nơi, đúng người, đúng mục đích. 
-                Mọi quỹ đều được xác minh kỹ lưỡng trước khi hoạt động.
+                Đảm bảo tiền ủng hộ đến đúng nơi, đúng người, đúng mục đích. Mọi
+                quỹ đều được xác minh kỹ lưỡng trước khi hoạt động.
               </Paragraph>
             </Card>
           </Col>
@@ -113,10 +121,18 @@ const GioiThieuQuy = () => {
         <Title level={3} style={{ color: "#1e9c45" }}>
           Tầm nhìn & Sứ mệnh
         </Title>
-        <Paragraph style={{ fontSize: 16, color: "#555", maxWidth: 900, margin: "0 auto" }}>
-          Chúng tôi hướng tới xây dựng một cộng đồng thiện nguyện số hóa, nơi mọi hành động 
-          giúp đỡ đều được ghi nhận, lan tỏa và minh bạch. Sự tin tưởng của bạn là động lực 
-          để chúng tôi tiếp tục phát triển và hoàn thiện hệ thống.
+        <Paragraph
+          style={{
+            fontSize: 16,
+            color: "#555",
+            maxWidth: 900,
+            margin: "0 auto",
+          }}
+        >
+          Chúng tôi hướng tới xây dựng một cộng đồng thiện nguyện số hóa, nơi
+          mọi hành động giúp đỡ đều được ghi nhận, lan tỏa và minh bạch. Sự tin
+          tưởng của bạn là động lực để chúng tôi tiếp tục phát triển và hoàn
+          thiện hệ thống.
         </Paragraph>
       </div>
 

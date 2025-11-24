@@ -4,23 +4,28 @@ import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 const persons = [
   {
     name: "Hội Chữ Thập Đỏ Việt Nam",
-    image: "https://i.pinimg.com/1200x/a4/0b/05/a40b050278d6c4ba8f9f959100722ad8.jpg",
+    image:
+      "https://i.pinimg.com/1200x/a4/0b/05/a40b050278d6c4ba8f9f959100722ad8.jpg",
   },
   {
     name: "Mặt Trận Tổ Quốc Việt Nam",
-    image: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Bi%E1%BB%83u_tr%C6%B0ng_M%E1%BA%B7t_tr%E1%BA%ADn_T%E1%BB%95_qu%E1%BB%91c_Vi%E1%BB%87t_Nam.svg",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/a/a2/Bi%E1%BB%83u_tr%C6%B0ng_M%E1%BA%B7t_tr%E1%BA%ADn_T%E1%BB%95_qu%E1%BB%91c_Vi%E1%BB%87t_Nam.svg",
   },
   {
     name: "Quỹ Bảo Trợ Trẻ Em Việt Nam",
-    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSk0kwAdukd5cTYdHuJktbTOMgj4_TwiJa7kQ&s",
+    image:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSk0kwAdukd5cTYdHuJktbTOMgj4_TwiJa7kQ&s",
   },
   {
     name: "Quỹ Từ Thiện Việt Nam",
-    image: "https://bcp.cdnchinhphu.vn/Uploaded/phungthithuhuyen/2018_10_30/index.png",
+    image:
+      "https://bcp.cdnchinhphu.vn/Uploaded/phungthithuhuyen/2018_10_30/index.png",
   },
   {
     name: "Quỹ Từ Thiện Tu Viện Tường Vân",
-    image: "https://quytuvientuongvan.com/wp-content/uploads/2016/10/final-logo-white-bg.png",
+    image:
+      "https://quytuvientuongvan.com/wp-content/uploads/2016/10/final-logo-white-bg.png",
   },
 ];
 
@@ -43,7 +48,10 @@ const CaNhanNoiBat = () => {
   const visibleItems = persons.slice(startIndex, startIndex + visibleCount);
   const itemsToDisplay =
     visibleItems.length < visibleCount
-      ? [...visibleItems, ...persons.slice(0, visibleCount - visibleItems.length)]
+      ? [
+          ...visibleItems,
+          ...persons.slice(0, visibleCount - visibleItems.length),
+        ]
       : visibleItems;
 
   return (
@@ -54,7 +62,7 @@ const CaNhanNoiBat = () => {
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        borderRadius:"20px",
+        borderRadius: "20px",
         padding: "60px 0",
         textAlign: "center",
       }}
@@ -123,9 +131,9 @@ const CaNhanNoiBat = () => {
                 style={{
                   width: "100%",
                   height: "160px",
-                  objectFit: "contain", 
+                  objectFit: "contain",
                   marginBottom: "15px",
-                  borderRadius: "8px", 
+                  borderRadius: "8px",
                 }}
               />
               <h3

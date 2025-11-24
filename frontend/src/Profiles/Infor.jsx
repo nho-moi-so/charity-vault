@@ -17,7 +17,7 @@ const mapUserToForm = (user) => ({
 const Infor = ({ user, onProfileUpdate }) => {
   const [formData, setFormData] = useState(mapUserToForm(user));
 
-  const [editing, setEditing] = useState(false); 
+  const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -41,7 +41,6 @@ const Infor = ({ user, onProfileUpdate }) => {
         contactAddress: formData.address,
         bio: formData.bio,
       };
-      console.log("Sending update payload:", payload);
 
       onProfileUpdate(payload)
         .then((updated) => {
@@ -51,25 +50,29 @@ const Infor = ({ user, onProfileUpdate }) => {
         })
         .catch((err) => {
           console.error("Update failed:", err);
-          message.error(err.message || "Không thể cập nhật thông tin. Vui lòng thử lại.");
+          message.error(
+            err.message || "Không thể cập nhật thông tin. Vui lòng thử lại."
+          );
         })
         .finally(() => setLoading(false));
     } else {
-      setEditing(true); 
+      setEditing(true);
     }
   };
 
   const fieldStyle = { marginBottom: 15 };
 
   return (
-    <Card title={<h2 style={{ fontWeight: "bold" }}>Thông tin cá nhân</h2>} style={{ marginBottom: 20 }}>
+    <Card
+      title={<h2 style={{ fontWeight: "bold" }}>Thông tin cá nhân</h2>}
+      style={{ marginBottom: 20 }}
+    >
       <div style={{ display: "flex", flexDirection: "column" }}>
-        
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Tên tài khoản</label>
-          <Input 
-            placeholder="Tên tài khoản" 
-            value={formData.name} 
+          <Input
+            placeholder="Tên tài khoản"
+            value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
             disabled={!editing || loading}
           />
@@ -77,9 +80,9 @@ const Infor = ({ user, onProfileUpdate }) => {
 
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Giới tính</label>
-          <Select 
-            placeholder="Giới tính" 
-            value={formData.gender} 
+          <Select
+            placeholder="Giới tính"
+            value={formData.gender}
             onChange={(value) => handleChange("gender", value)}
             disabled={!editing || loading}
             style={{ width: "100%" }}
@@ -92,9 +95,9 @@ const Infor = ({ user, onProfileUpdate }) => {
 
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Ngày sinh</label>
-          <Input 
-            type="date" 
-            value={formData.birthDate} 
+          <Input
+            type="date"
+            value={formData.birthDate}
             onChange={(e) => handleChange("birthDate", e.target.value)}
             disabled={!editing || loading}
           />
@@ -102,9 +105,9 @@ const Infor = ({ user, onProfileUpdate }) => {
 
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Số điện thoại</label>
-          <Input 
-            placeholder="Số điện thoại" 
-            value={formData.phone} 
+          <Input
+            placeholder="Số điện thoại"
+            value={formData.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
             disabled={!editing || loading}
           />
@@ -112,9 +115,9 @@ const Infor = ({ user, onProfileUpdate }) => {
 
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Email</label>
-          <Input 
-            placeholder="Email" 
-            value={formData.email} 
+          <Input
+            placeholder="Email"
+            value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             disabled={!editing || loading}
           />
@@ -122,9 +125,9 @@ const Infor = ({ user, onProfileUpdate }) => {
 
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Địa chỉ</label>
-          <Input 
-            placeholder="Địa chỉ" 
-            value={formData.address} 
+          <Input
+            placeholder="Địa chỉ"
+            value={formData.address}
             onChange={(e) => handleChange("address", e.target.value)}
             disabled={!editing || loading}
           />
@@ -132,15 +135,14 @@ const Infor = ({ user, onProfileUpdate }) => {
 
         <div style={fieldStyle}>
           <label style={{ fontWeight: "bold" }}>Giới thiệu bản thân</label>
-          <TextArea 
-            rows={3} 
-            placeholder="Giới thiệu bản thân" 
-            value={formData.bio} 
+          <TextArea
+            rows={3}
+            placeholder="Giới thiệu bản thân"
+            value={formData.bio}
             onChange={(e) => handleChange("bio", e.target.value)}
             disabled={!editing || loading}
           />
         </div>
-
       </div>
 
       <Button
