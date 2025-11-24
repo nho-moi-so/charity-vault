@@ -211,6 +211,7 @@ const TaoQuyMoi = () => {
               thumbnails: getFileUrls(values.anhThumbnail),
               description: values.moTaNgan,
               category: values.danhMuc,
+              goal: values.soTienMucTieu,
             });
           } catch (error) {
             console.error("Error syncing with backend:", error);
