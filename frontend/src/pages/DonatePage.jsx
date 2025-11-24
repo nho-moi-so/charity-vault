@@ -227,16 +227,289 @@ const DonatePage = () => {
       )}
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px" }}>
-        {/* ... existing code ... */}
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Button
+            type="link"
+            onClick={() => navigate(`/funds/${id}`)}
+            style={{
+              fontSize: "16px",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            ← Quay lại trang chi tiết quỹ
+          </Button>
+          <WalletConnect
+            setAccount={setWalletAccount}
+            setError={setWalletError}
+          />
+        </div>
         <Row gutter={[24, 24]}>
           <Col xs={24} md={12}>
-            {/* ... existing code ... */}
+            <Card style={{ padding: "20px" }}>
+              <Row align="middle" gutter={16}>
+                <Col>
+                  <Avatar size={64} src={logo} />
+                </Col>
+                <Col>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <Text style={{ fontSize: "16px" }}>
+                      Tiền ủng hộ được chuyển đến
+                    </Text>
+                    <Title level={4} style={{ margin: 0, fontSize: "20px" }}>
+                      {organization}
+                    </Title>
+                  </div>
+                </Col>
+              </Row>
+              <div
+                style={{
+                  width: "100%",
+                  height: "450px",
+                  marginTop: "16px",
+                  borderRadius: "8px",
+                  backgroundColor: "#f0f0f0",
+                  overflow: "hidden",
+                  position: "relative",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <img
+                  src={coverImage}
+                  alt="Hình đại diện quỹ"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "16px",
+                    left: "16px",
+                    backgroundColor: "rgba(202, 202, 202, 0.85)",
+                    color: "#000",
+                    padding: "8px 12px",
+                    borderRadius: "20px",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {daysLeft > 0 ? `${daysLeft} ngày còn lại` : "Đã kết thúc"}
+                </div>
+              </div>
+              <Title level={4} style={{ marginTop: "16px", fontSize: "22px" }}>
+                {fund.title}
+              </Title>
+              <Text strong style={{ fontSize: "16px" }}>
+                Mục tiêu quỹ:
+              </Text>{" "}
+              <Text style={{ fontSize: "16px" }}>
+                {goalAmount.toLocaleString()} VND
+              </Text>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "12px",
+                }}
+              >
+                <Text strong style={{ fontSize: "16px" }}>
+                  Số tiền đã đạt được:{" "}
+                  <span style={{ color: "#28a745", fontSize: "18px" }}>
+                    {raisedAmount.toLocaleString()} VND
+                  </span>
+                </Text>
+                <Text style={{ fontSize: "16px" }}>{progressPercent}%</Text>
+              </div>
+              <Progress
+                percent={progressPercent}
+                showInfo={false}
+                strokeColor={{ "0%": "#28a745", "100%": "#7ed957" }}
+                style={{
+                  marginTop: "8px",
+                  height: "18px",
+                  borderRadius: "8px",
+                }}
+              />
+              <div
+                style={{
+                  marginTop: "16px",
+                  fontStyle: "italic",
+                  color: "#555",
+                  fontSize: "15px",
+                }}
+              >
+                Hãy chung tay để đạt mục tiêu quỹ sớm nhất!
+              </div>
+            </Card>
           </Col>
 
           <Col xs={24} md={12}>
             <Card title="Thông tin ủng hộ" style={{ padding: "10px" }}>
               <Form layout="vertical" form={form} onFinish={onFinish}>
-                {/* ... existing form items ... */}
+                <Form.Item
+                  label={
+                    <span style={{ fontSize: "16px", fontWeight: 500 }}>
+                      Số tiền ủng hộ (VND)
+                    </span>
+                  }
+                  name="amount"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập số tiền!" },
+                  ]}
+                >
+                  <InputNumber
+                    min={1000}
+                    style={{
+                      width: "100%",
+                      fontSize: "20px",
+                      height: "40px",
+                      textAlign: "right",
+                      color: "#155724",
+                      fontWeight: "bold",
+                    }}
+                    placeholder="Nhập số tiền"
+                    formatter={(value) =>
+                      value
+                        ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                        : ""
+                    }
+                    parser={(value) => value.replace(/\./g, "")}
+                    addonAfter={
+                      <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                        VND
+                      </span>
+                    }
+                  />
+                </Form.Item>
+
+                <div style={{ marginBottom: 10, color: "#888", fontSize: 13 }}>
+                  Tỷ giá quy đổi ước tính: 1 ETH ≈ {ethPrice.toLocaleString()}{" "}
+                  VND
+                </div>
+
+                <div
+                  style={{
+                    marginBottom: "20px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                  }}
+                >
+                  {[50000, 100000, 200000, 500000].map((amt) => (
+                    <Button
+                      key={amt}
+                      type="default"
+                      style={{
+                        fontSize: "16px",
+                        background: "linear-gradient(90deg, #28a745, #7ed957)",
+                        color: "#fff",
+                        border: "none",
+                        flex: 1,
+                      }}
+                      onClick={() => form.setFieldsValue({ amount: amt })}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.filter = "brightness(1.1)")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.filter = "brightness(1)")
+                      }
+                    >
+                      {amt.toLocaleString()}
+                    </Button>
+                  ))}
+                </div>
+
+                <Form.Item
+                  label={
+                    <span style={{ fontSize: "16px", fontWeight: 500 }}>
+                      Nội dung chuyển khoản
+                    </span>
+                  }
+                  name="note"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập nội dung!" },
+                  ]}
+                >
+                  <Input
+                    style={{ fontSize: "16px" }}
+                    placeholder="Ví dụ: Ủng hộ Quỹ Vì Miền Trung"
+                  />
+                </Form.Item>
+
+                <Form.Item name="anonymous" valuePropName="checked">
+                  <Checkbox
+                    onChange={(e) => setAnonymous(e.target.checked)}
+                    style={{ fontSize: "16px", color: "#155724" }}
+                  >
+                    Ủng hộ ẩn danh
+                  </Checkbox>
+                </Form.Item>
+
+                <Title
+                  level={5}
+                  style={{ marginTop: "24px", fontSize: "18px" }}
+                >
+                  Thông tin của bạn
+                </Title>
+
+                <Form.Item
+                  label={
+                    <span style={{ fontSize: "16px", fontWeight: 500 }}>
+                      Họ và tên
+                    </span>
+                  }
+                  name="name"
+                  rules={[
+                    { required: !anonymous, message: "Vui lòng nhập tên!" },
+                  ]}
+                >
+                  <Input
+                    placeholder="Nguyễn Văn A"
+                    disabled={anonymous}
+                    style={{ fontSize: "16px" }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label={
+                    <span style={{ fontSize: "16px", fontWeight: 500 }}>
+                      Email
+                    </span>
+                  }
+                  name="email"
+                  rules={[
+                    { required: !anonymous, message: "Vui lòng nhập email!" },
+                    { type: "email", message: "Email không hợp lệ!" },
+                  ]}
+                >
+                  <Input
+                    placeholder="example@mail.com"
+                    disabled={anonymous}
+                    style={{ fontSize: "16px" }}
+                  />
+                </Form.Item>
 
                 <Form.Item>
                   <Button
