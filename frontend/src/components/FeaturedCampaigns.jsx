@@ -54,6 +54,7 @@ const FeaturedCampaigns = () => {
             title: fund.title,
             description: fund.metadataURI || "Quỹ từ thiện ý nghĩa",
             image:
+              fund.images?.main ||
               "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
             daysLeft: 30, // Default, backend chưa có
             goal: 100000000, // Default goal
