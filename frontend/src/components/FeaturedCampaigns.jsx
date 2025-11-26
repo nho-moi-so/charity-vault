@@ -48,6 +48,10 @@ const FeaturedCampaigns = () => {
               donatedAmount = parseFloat(fund.totalReceived);
             }
           }
+          const endDate = fund.endDate ? new Date(fund.endDate) : new Date();
+          const today = new Date();
+          const timeDiff = endDate.getTime() - today.getTime();
+          const remainingDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
           return {
             id: fund.fundId,
@@ -56,8 +60,8 @@ const FeaturedCampaigns = () => {
             image:
               fund.images?.main ||
               "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
-            daysLeft: 30, // Default, backend chưa có
-            goal: 100000000, // Default goal
+            remainingDays: remainingDays > 0 ? remainingDays : 0,
+            goal: fund.goal,
             donated: donatedAmount,
           };
         });
@@ -235,7 +239,7 @@ const FeaturedCampaigns = () => {
                       fontSize: "13px",
                     }}
                   >
-                    ⏰ {item.daysLeft} ngày còn lại
+                    ⏰ {item.remainingDays} ngày còn lại
                   </div>
                 </div>
 

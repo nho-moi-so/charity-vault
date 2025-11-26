@@ -29,7 +29,7 @@ const FundInfoBox = ({ fund, blockchainData }) => {
 
   if (!fund) return null;
 
-  const goal = fund.goal || 100000000;
+  const goal = fund.goal;
 
   // Calculate raised amount correctly
   let raised = 0;

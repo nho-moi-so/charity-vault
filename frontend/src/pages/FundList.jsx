@@ -112,7 +112,7 @@ const FundList = () => {
               fund.images?.main ||
               "https://cdn.pixabay.com/photo/2017/08/06/23/00/charity-2596422_1280.jpg",
             raised: raisedAmount,
-            goal: fund.goal || 100000000, // Fallback nếu không có goal
+            goal: fund.goal,
             donors: 0, // Tạm thời chưa có số lượng donors trong API list
             daysLeft: daysLeft > 0 ? daysLeft : 0,
             owner: fund.owner,

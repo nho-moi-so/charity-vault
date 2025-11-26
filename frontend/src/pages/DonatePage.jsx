@@ -59,7 +59,7 @@ const DonatePage = () => {
         if (response.data.success) {
           const fundData = response.data.fund;
           setFund(fundData);
-          setGoalAmount(fundData.goal || 100000000);
+          setGoalAmount(fundData.goal);
 
           // 3. Get Blockchain Data (for latest raised amount)
           try {
